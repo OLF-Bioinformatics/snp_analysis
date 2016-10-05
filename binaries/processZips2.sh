@@ -100,6 +100,8 @@ bbduk.sh "$memJava" \
     unpigz=t \
     2> >(tee -a "${logs}"/trimming.txt)
 
+wait
+
 end=$(date +%s)
 elapsed=$(($end - $start))
 printf "Trimming finished in %dh:%dm:%ds\n" \
@@ -132,6 +134,8 @@ bbmerge.sh "$memJava" \
     ziplevel=5 \
     unpigz=t \
     2> >(tee -a "${logs}"/merging.txt)
+
+wait
 
 end=$(date +%s)
 elapsed=$(($end - $start))
@@ -203,6 +207,8 @@ wait
 #results from  oligo_identifier2.sh
 source "${sampleDir}"/variables.txt
 
+wait
+
 genome="${bruRefGenome["$ID"]}"
 hqs="${bruRefVCF["$ID"]}"
 
@@ -225,9 +231,11 @@ if [ -e "${genome%.*}".dict ]; then #check if indexing already done
 else
     echo -e "Indexing reference genome $(basename "$genome") with Picard tools..."
     java "$memJava" -jar "$picard" CreateSequenceDictionary \
-    R="$genome" \
-    O="${genome%.*}".dict #have to strip off the ".fasta" extension and replace it by ".dict"
+        R="$genome" \
+        O="${genome%.*}".dict #have to strip off the ".fasta" extension and replace it by ".dict"
 fi
+
+wait
 
 #Indexing reference VCF file (High Quality SNPs)
 if [ -e "${hqs}".tbi ]; then #check if indexing already done
@@ -241,6 +249,8 @@ else
     fi
 fi
 
+wait
+
 #index reference genome for samtools
 if [ -e "${genome}".fai ]; then #check if indexing already done
     echo -e "Reference genome $(basename "$genome") already indexed. Skipping this step."
@@ -248,6 +258,8 @@ else
     echo -e "Indexing reference genome $(basename "$genome") with Samtools..."
     samtools faidx "$genome"
 fi
+
+wait
 
 #index reference genome for bwa
 if [ -e "${genome}".sa ] && [ -e "${genome}".amb ] \
@@ -258,6 +270,8 @@ else
     echo -e "Indexing reference genome $(basename "$genome") with bwa..."
     bwa index "$genome"
 fi
+
+wait
 
 
 #######################
@@ -291,14 +305,22 @@ bwa mem -t "$cpu" -r 1 -a -M -R "$rg" "$genome" "$m" | \
     sambamba view -t "$cpu" -f bam -h -F "not (unmapped)" -S /dev/stdin | \
     sambamba sort -t "$cpu" -o "${aligned}"/"${n}"_merged.bam /dev/stdin
 
+wait
+
 sambamba markdup -r -t "$cpu" "${aligned}"/"${n}"_merged.bam "${aligned}"/"${n}"_merged_nodup.bam
+
+wait
 
 #map umerged (paried-end)
 bwa mem -t "$cpu" -r 1 -a -M -R "$rg" "$genome" "$mu1" "$mu2" | \
     sambamba view -t "$cpu" -f bam -h -F "not (unmapped)" -S /dev/stdin | \
     sambamba sort -t "$cpu" -o "${aligned}"/"${n}"_unmerged.bam /dev/stdin
 
+wait
+
 sambamba markdup -r -t "$cpu" "${aligned}"/"${n}"_unmerged.bam "${aligned}"/"${n}"_unmerged_nodup.bam
+
+wait
 
 #merge bam files
 # Usage: sambamba-merge [options] <output.bam> <input1.bam> <input2.bam> [...]
@@ -306,6 +328,8 @@ sambamba merge -t "$cpu" \
     "${aligned}"/"${n}"_all.bam \
     "${aligned}"/"${n}"_merged_nodup.bam \
     "${aligned}"/"${n}"_unmerged_nodup.bam
+
+wait
 
 #elapsed time
 end=$(date +%s)
@@ -338,6 +362,8 @@ java "$memJava" -jar "$gatk" -T RealignerTargetCreator \
     -o "${realigned}"/"${n}".intervals \
     -nt "$cpu"
 
+wait
+
 #Realign indels - step 2
 java "$memJava" -jar "$gatk" -T IndelRealigner \
     -R "$genome" \
@@ -345,6 +371,8 @@ java "$memJava" -jar "$gatk" -T IndelRealigner \
     -filterNoBases \
     -targetIntervals "${realigned}"/"${n}".intervals \
     -o "${realigned}"/"${n}"_realigned.bam
+
+wait
 
 #remove old aligned files
 # rm "${aligned}"/*
@@ -362,6 +390,8 @@ java "$memJava" -jar "$gatk" -T BaseRecalibrator \
     --maximum_cycle_value 1000 \
     -nct "$cpu"
 
+wait
+
 #Print reads
 java "$memJava" -jar "$gatk" -T PrintReads \
     -R "$genome" \
@@ -370,6 +400,8 @@ java "$memJava" -jar "$gatk" -T PrintReads \
     -BQSR "${realigned}"/"${n}"_recal_data.table \
     -o "${realigned}"/"${n}"_realigned_recalibrated.bam \
     -nct "$cpu"
+
+wait
 
 #Collect Depth of coverage info for every 
 java "$memJava" -jar "$gatk" -T DepthOfCoverage \
@@ -380,6 +412,8 @@ java "$memJava" -jar "$gatk" -T DepthOfCoverage \
     --omitLocusTable \
     --omitPerSampleStats \
     -nt "$cpu"
+
+wait
 
 #remove realigned files
 # rm "${realigned}"/*
@@ -408,9 +442,13 @@ java "$memJava" -jar "$gatk" -T HaplotypeCaller \
     --allowNonUniqueKmersInRef \
     -o "${variant}"/"${n}".vcf
 
+wait
+
 #index variant file for IGV
 java "$memJava" -jar "$igvtools" index \
     "${variant}"/"${n}".vcf
+
+wait
 
 #elapsed time
 end=$(date +%s)
@@ -489,6 +527,8 @@ java "$memJava" -jar "$gatk" -T UnifiedGenotyper \
     -o "${variant}"/"${n}".allsites.vcf \
     -nt "$cpu"
 
+wait
+
 # This removes all positions same as the reference. 
 # These positions are found by removing rows were column (field) 8 begins with AN=2.
 # This decreases the size of the VCF considerably.
@@ -499,6 +539,9 @@ cat "${variant}"/"${n}".allsites.vcf \
 
 java "$memJava" -jar "$igvtools" index \
     "${variant}"/"${n}".diffsites.vcf
+
+wait
+
 # ready-mem
 #clean up
 # find "${variant}" -type f | grep -v "SNPsZeroCoverage" # | xargs rm
@@ -520,6 +563,8 @@ java "$memJava" -jar "$picard" QualityScoreDistribution \
     OUTPUT="${variant}"/"${n}".QualityScoreDistribution \
     ASSUME_SORTED=true
 
+wait
+
 #Mean Quality by Cycle
 echo "***Mean Quality by Cycle"
 java "$memJava" -jar "$picard" CollectMultipleMetrics \
@@ -529,6 +574,8 @@ java "$memJava" -jar "$picard" CollectMultipleMetrics \
     PROGRAM=MeanQualityByCycle \
     ASSUME_SORTED=true
 
+wait
+
 #Collect Alignment Summary Metrics
 echo "***Collect Alignment Summary Metrics"
 java "$memJava" -jar "$picard" CollectAlignmentSummaryMetrics \
@@ -536,6 +583,8 @@ java "$memJava" -jar "$picard" CollectAlignmentSummaryMetrics \
     INPUT="${realigned}"/"${n}"_realigned_recalibrated.bam \
     OUTPUT="${variant}"/"${n}".AlignmentMetrics \
     ASSUME_SORTED=true
+
+wait
 
 #Collect GC Bias Error
 echo "***Collect GC Bias Error"
@@ -546,6 +595,8 @@ java "$memJava" -jar "$picard" CollectGcBiasMetrics \
     CHART_OUTPUT="${variant}"/"${n}".GC.pdf \
     SUMMARY_OUTPUT="${variant}"/"${n}".GC.summary.txt \
     ASSUME_SORTED=true
+
+wait
 
 #Collect Insert Size Metrics
 echo "***Collect Insert Size Metrics"
@@ -614,6 +665,7 @@ cat "${variant}"/"${n}".AlignmentMetrics \
 aveCoverage=$(cat "${realigned}"/"${n}"_coverage.txt \
     | awk 'NR > 1' \
     | awk '{sum+=$4} END { print sum/NR"X"}')
+
 wait
 
 echo -e "\nAverage depth of coverage: "$aveCoverage"" | tee -a "${sampleDir}"/"${n}".stats.txt
