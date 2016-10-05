@@ -1,0 +1,3 @@
+Designation	Chromosome	Position	ALT	Label
+1	MTB-1773-ERR234199	3466131	T	Group
+1A	MTB-1773-ERR234199	4266497	T	Subgroup

@@ -1,0 +1,3 @@
+Designation	Chromosome	Position	ALT	Label
+1	gi|386003090|ref|NC_017528.1|	4290479	T	Group
+1A	gi|386003090|ref|NC_017528.1|	3607388	T	Subgroup

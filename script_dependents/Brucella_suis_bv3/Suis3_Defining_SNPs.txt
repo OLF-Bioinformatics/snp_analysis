@@ -1,0 +1,2 @@
+Designation	Chromosome	Position	ALT	Label
+1	B-REF-BS3-686	2283511		Group

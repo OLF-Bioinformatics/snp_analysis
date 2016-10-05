@@ -1,0 +1,2 @@
+Designation	Chromosome	Position	ALT	Label
+1	gi|384210366|ref|NC_017246.1|	2257898		Group
