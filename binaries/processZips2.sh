@@ -91,8 +91,7 @@ bbduk.sh "$memJava" \
     in2="$r2" \
     ref="${prog}"/bbmap/resources/nextera.fa.gz \
     ktrim=r k=23 mink=11 hdist=1 tbo tpe \
-    qtrim=lr trimq=5 \
-    qtrim=w trimq=15 \
+    qtrim=lr trimq=10 \
     minlen=64 \
     out1="${trimmed}"/"${n}"_Trimmed_1P.fastq.gz \
     out2="${trimmed}"/"${n}"_Trimmed_2P.fastq.gz \
