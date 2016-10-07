@@ -30,11 +30,11 @@ echo ""  > "${reports}"/dailyStats.txt
 ########################
 
 
-# #populate fastq folder (symbolic links)
-# for i in $(find "$fastqPath" -type f | grep -F ".fastq.gz"); do
-#     name=$(basename "$i")
-#     ln -s "$i" "${baseDir}"/"$name"
-# done
+#populate fastq folder (symbolic links)
+for i in $(find "$fastqPath" -type f | grep -F ".fastq.gz"); do
+    name=$(basename "$i")
+    ln -s "$i" "${baseDir}"/"$name"
+done
 
 
 ##########################
