@@ -1760,13 +1760,12 @@ rm "${baseDir}"/csection1.txt
 
 if [ "$mflag" ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
-    mail -s "Resuts from script 2" -a "${baseDir}"/email_log.html "$email_list" <<< "${baseDir}"/email_log.html
+    mail -s "Resuts from script 2" -A "${baseDir}"/email_log.html -t "$email_list" <<< "${baseDir}"/email_log.html
 else
-    mail -s "Resuts from script 2" -a "${baseDir}"/email_log.html "$email_list" <<< "${baseDir}"/email_log.html
+    mail -s "Resuts from script 2" -A "${baseDir}"/email_log.html -t "$email_list" <<< "${baseDir}"/email_log.html
 fi
 
 #Cleanup
-# rm "${baseDir}"/mytempfile.txt
 # rm "${baseDir}"/email_log.html
 
 #Closing comment

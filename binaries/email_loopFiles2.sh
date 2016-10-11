@@ -77,13 +77,14 @@ cat "${reports}"/email_processZips.txt \
 
 # rm "${reports}"/email_processZips.txt
 
-if [ $1 == "me" ]; then
+if [ $1 = "me" ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
 else
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaea@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaea@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
 fi
 
-cat "${reports}"/email_processZips2.txt | mail -s "WGS results" "$email_list"
+cat "${reports}"/email_processZips2.txt | mail -s "WGS results" -t "$email_list"
+# mail -s "WGS results" -t "$email_list" < "${reports}"/email_processZips2.txt
 
 echo $(date) >> "${reports}"/mlstCheck_all.txt
 cat "${reports}"/mlstCheck.txt >> "${reports}"/mlstCheck_all.txt

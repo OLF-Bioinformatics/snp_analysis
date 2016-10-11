@@ -88,7 +88,7 @@ END
 baseDir=""${HOME}"/analyses/mbovisCAN_script2v3"
 
 #Where the VCF files are
-vcfPath=""${HOME}"/data/TB_VCFs"
+vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
 
 #####################
@@ -2466,9 +2466,9 @@ rm "${baseDir}"/csection1.txt
 
 if [ "$mflag" ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
-    mail -s "Resuts from script 2" -a "${baseDir}"/email_log.html "$email_list" <<< "${baseDir}"/email_log.html
+    mail -s "Resuts from script 2" -t "$email_list" < "${baseDir}"/email_log.html
 else
-    mail -s "Resuts from script 2" -a "${baseDir}"/email_log.html "$email_list" <<< "${baseDir}"/email_log.html
+    mail -s "Resuts from script 2" -t "$email_list" < "${baseDir}"/email_log.html
 fi
 
 #Cleanup

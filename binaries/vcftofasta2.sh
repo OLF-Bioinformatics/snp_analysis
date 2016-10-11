@@ -30,10 +30,10 @@ END
 
 
 #Where analysis will take place
-baseDir=""${HOME}"/analyses/mbovisCAN_script2v2"
+baseDir=""${HOME}"/analyses/mbovisCAN_script2v2a"
 
 #Where the VCF files are
-vcfPath=""${HOME}"/data/TB_VCFs"
+vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
 
 #####################
@@ -1437,7 +1437,7 @@ function alignTable ()
         >> "${d}"/RAxMLfastaGroup.txt
 
     #Make the tree
-    raxmlHPC-PTHREADS-AVX \
+    raxmlHPC-PTHREADS-AVX2 \
         -T "$cpu" \
         -s "${d}"/RAxMLfastaGroup.txt \
         -w "$d" \
@@ -2185,7 +2185,7 @@ for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
     # If a group number matches a quality position in the VCF (formatedpos) then print the position
     cat "$DefiningSNPs" | grep "Group" > "${baseDir}"/groupsnps.txt
 
-    awk 'NR==FNR{a[$0];next}$2 in a' "${i%.vcf}.quality" "${baseDir}"/groupsnps.txt | awk '{print $1}' > "${i%.vcf}.group-foundpositions"
+    awk 'NR==FNR{a[$0];next}$3 in a' "${i%.vcf}.quality" "${baseDir}"/groupsnps.txt | awk '{print $1}' > "${i%.vcf}.group-foundpositions"
 
     echo "This is the Group Numbers: $(cat "${i%.vcf}.group-foundpositions")"
 
@@ -2217,7 +2217,7 @@ for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
     # If a group number matches a quality position in the VCF (formatedpos) then print the position
     cat "$DefiningSNPs" | grep "Subgroup" > "${baseDir}"/subgroupsnps.txt
 
-    awk 'NR==FNR{a[$0];next}$2 in a' "${i%.vcf}.quality" "${baseDir}"/subgroupsnps.txt | awk '{print $1}' > "${i%.vcf}.subgroup-foundpositions"
+    awk 'NR==FNR{a[$0];next}$3 in a' "${i%.vcf}.quality" "${baseDir}"/subgroupsnps.txt | awk '{print $1}' > "${i%.vcf}.subgroup-foundpositions"
 
     echo "This is the Subgroup Numbers: $(cat "${i%.vcf}.subgroup-foundpositions")"
 
@@ -2248,7 +2248,7 @@ for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
     # If a group number matches a quality position in the VCF (formatedpos) then print the position
     cat "$DefiningSNPs" | grep "Clade" > "${baseDir}"/cladesnps.txt
 
-    awk 'NR==FNR{a[$0];next}$2 in a' "${i%.vcf}.quality" "${baseDir}"/cladesnps.txt | awk '{print $1}' > "${i%.vcf}.clade-foundpositions"
+    awk 'NR==FNR{a[$0];next}$3 in a' "${i%.vcf}.quality" "${baseDir}"/cladesnps.txt | awk '{print $1}' > "${i%.vcf}.clade-foundpositions"
 
     echo "This is the Clade Numbers: $(cat "${i%.vcf}.clade-foundpositions")"
 
@@ -2631,7 +2631,7 @@ for d in "${directories[@]}"; do
         done
 
     else
-        echo "Nothing to do"
+        echo "Nothing to do for $(basename "$d")"
     fi
 done
 
@@ -2721,10 +2721,10 @@ fileName=$(basename "$0")
 if [ "$mflag" ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
     echo "vcftofasta.sh completed" > "${baseDir}"/mytempfile.txt
-    cat "${baseDir}"/mytempfile.txt | mail -s "vcftofasta.sh completed subject" -a "${baseDir}"/email_log.html -- "$email_list"
+    cat "${baseDir}"/mytempfile.txt | mail -s "vcftofasta.sh completed subject" -A "${baseDir}"/email_log.html -t "$email_list"
 else
     echo "$fileName "$@" completed, See attachment" > "${baseDir}"/mytempfile.txt
-    cat "${baseDir}"/mytempfile.txt | mail -s ""$fileName" "$@" completed" -a "${baseDir}"/email_log.html -- "$email_list"
+    cat "${baseDir}"/mytempfile.txt | mail -s ""$fileName" "$@" completed" -A "${baseDir}"/email_log.html -t "$email_list"
 fi
 rm "${baseDir}"/mytempfile.txt
 rm "${baseDir}"/email_log.html
