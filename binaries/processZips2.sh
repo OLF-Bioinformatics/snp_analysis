@@ -374,7 +374,7 @@ java "$memJava" -jar "$gatk" -T IndelRealigner \
 wait
 
 #remove old aligned files
-# rm "${aligned}"/*
+rm "${aligned}"/*
 
 #Recalibrate bases
 #known sites obtaines by running bwa and mpileup on all the samples
@@ -414,9 +414,6 @@ java "$memJava" -jar "$gatk" -T DepthOfCoverage \
 
 wait
 
-#remove realigned files
-# rm "${realigned}"/*
-
 # #Coverage stats by bbmap (20s vs 8min!) -> gives different values than GATK
 # pileup.sh "$memJava" \
 #     in="${realigned}"/"${n}"_realigned_recalibrated.bam \
@@ -436,7 +433,7 @@ wait
 java "$memJava" -jar "$gatk" -T HaplotypeCaller \
     -R "$genome" \
     -I "${realigned}"/"${n}"_realigned_recalibrated.bam \
-    --bamOutput "${variant}"/"${n}".bam \
+    --bamOutput "${variant}"/"${n}"_haplotypes.bam \
     --dontUseSoftClippedBases \
     --allowNonUniqueKmersInRef \
     -o "${variant}"/"${n}".vcf
@@ -541,10 +538,9 @@ java "$memJava" -jar "$igvtools" index \
 
 wait
 
-# ready-mem
 #clean up
+rm igv.log
 # find "${variant}" -type f | grep -v "SNPsZeroCoverage" # | xargs rm
-
 
 #################
 #               #
@@ -714,24 +710,24 @@ readcount=$(cat "${variant}"/"${n}".AlignmentMetrics \
 #Put in the coverageReport
 echo -e ""$n"\t"$ID"\t"$readcount"\t"$aveCoverage"\t"$percGenomeCoverage"%" | tee -a "${reports}"/coverageReport.txt "${reports}"/dailyReport.txt
 
-#cleanup
-# mv ${n}.Metrics_summary.txt "$qual"
-# mv ${n}.stats.txt "$qual"
-# rm ${n}.Quality_by_cycle.insert_size_metrics
-# rm ${n}.AlignmentMetrics
 
 # if [ -f "${sampleDir}"/*identifier_out.txt ];then
 #     cat "${sampleDir}"/*out1.txt ../*out2.txt > ../${n}-identification.txt
 #     rm "${sampleDir}"/*identifier_out*
 # fi
 
+
 #cleanup
+find "${realigned}" -type f | grep -v "recalibrated" | xargs rm
+# mv ${n}.Metrics_summary.txt "$qual"
+# mv ${n}.stats.txt "$qual"
+# rm ${n}.Quality_by_cycle.insert_size_metrics
+# rm ${n}.AlignmentMetrics
 # mv "${startingdir}"/fastq ${startingdir}/spoligo
 # rm "${startingdir}"/spoligo/*fastq
 # rm -r "${startingdir}"/temp
 # ln "${qual}"/"${n}".stats.txt ./stats-"${n}".txt
 
-# cp $0 ./
 
 #Make dailyStats.txt for each stats.txt made for each isolate.
 echo -e "\n\n\n" >> "${reports}"/dailyStats.txt
@@ -741,5 +737,3 @@ echo "<------- "$n" "$ID" ------->" >> "${reports}"/dailyStats.txt
 cat "${sampleDir}"/"${n}".stats.txt >> "${reports}"/dailyStats.txt
 
 echo "**************************** END "$n" ****************************"
-
-
