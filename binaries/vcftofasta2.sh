@@ -30,7 +30,7 @@ END
 
 
 #Where analysis will take place
-baseDir=""${HOME}"/analyses/mbovisCAN_script2v2a"
+baseDir=""${HOME}"/analyses/mbovisCAN_script2v2test"
 
 #Where the VCF files are
 vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
@@ -2039,7 +2039,9 @@ wait
 echo "chromCount:  "$chromCount""
 
 if [ "$FilterAllVCFs" == yes ]; then
+
     echo "$(date) --> Marking all VCFs and removing filtering region"
+
     # Label filter field for positions to be filtered in all VCFs
     if [ "$chromCount" -eq 1 ]; then
         for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
@@ -2077,7 +2079,7 @@ if [ "$FilterAllVCFs" == yes ]; then
 
             # Removed positions and clobber origingal vcf
             cat "${baseDir}"/"${n}".filtered.vcf \
-                | grep -v "Not_Included"  \
+                | grep -v "Not_Included" \
                 > "$i"
         done
         wait

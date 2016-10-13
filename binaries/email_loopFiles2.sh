@@ -9,10 +9,10 @@
 
 
 #where fastq reads are
-export fastqPath="/media/3tb_hdd/data/Mycobaterium_bovis"
+export fastqPath="/media/3tb_hdd/data/Mycobaterium_bovis/USDA/"
 
 #Analysis root directory
-export baseDir=""${HOME}"/analyses/mbovis_script1" #make variable global (for called scripts)
+export baseDir=""${HOME}"/analyses/mbovisUSDA_script1" #make variable global (for called scripts)
 
 #script dependenties
 export dependents=""${HOME}"/prog/snp_analysis/script_dependents"

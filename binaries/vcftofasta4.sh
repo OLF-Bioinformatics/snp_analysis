@@ -1467,16 +1467,18 @@ if [ "$FilterAllVCFs" == "yes" ]; then
     if [ "$chromCount" -ge 1 ]; then
 
         for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-            m=$(basename "$i")
-            n=$(echo "$m" | sed "$dropEXT")
 
-            echo "Filtering "$m""
-
-            #Usage: perl regionRemover.pl <FilterToAll.txt> <input.vcf> <filtered.vcf>
+            #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
             regionRemover.pl \
                 "${filterdir}/FilterToAll.txt" \
+                "${baseDir}"/chroms.txt \
                 "$i" \
-                "$i" #This overwrites the original files
+                "${i}".filtered #This overwrites the original files
+            wait
+
+            #Replace original vcf by the filtered one
+            mv "${i}".filtered "$i"
+
         done
     else
         echo "No chromosome detected."
