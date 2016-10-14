@@ -1662,15 +1662,10 @@ wait
 
 echo -e "\nPreparing final report --> "$(date)""
 
-cat "${baseDir}"/section1.txt \
-    column \
-    > "${baseDir}"/csection1.txt
+[ -f "${baseDir}"/section1.txt ] && cat "${baseDir}"/section1.txt | column > "${baseDir}"/csection1.txt
 
-cat "${baseDir}"/section4.txt \
-    | sort -nr \
-    > "${baseDir}"/ssection4.txt
 
-#Elapsed time
+#Script execution time
 echo -e "\nEnd Time: "$(date)"" >> "${baseDir}"/sectiontime.txt
 endtime=$(date +%s)
 runtime=$((endtime-starttime))
@@ -1691,7 +1686,7 @@ cat "${baseDir}"/section5.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************\n" >> "${baseDir}"/log.txt
 
 echo "These files did not get renamed:" >> "${baseDir}"/log.txt
-cat "${baseDir}"/csection1.txt >> "${baseDir}"/log.txt
+[ -f "${baseDir}"/csection1.txt ] && cat "${baseDir}"/csection1.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************\n" >> "${baseDir}"/log.txt
 
 echo "Possible mixed isolates (defining SNPs called AC=1)" >> "${baseDir}"/log.txt
@@ -1701,11 +1696,12 @@ cat "${baseDir}"/section3.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************\n" >> "${baseDir}"/log.txt
 
 echo "SNP counts:" >> "${baseDir}"/log.txt
-cat s"${baseDir}"/ssection4.txt >> "${baseDir}"/log.txt
+cat "${baseDir}"/section4.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************" >> "${baseDir}"/log.txt
 
 echo "AC1 called SNPs"
 cat "${baseDir}"/all_vcfs/all_vcfs_AC1Report.txt >> "${baseDir}"/log.txt
+echo -e "\n****************************************************" >> "${baseDir}"/log.txt
 
 
 #####################
@@ -1729,7 +1725,7 @@ cat "${baseDir}"/section5.txt \
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
 echo "<p> These files did not get renamed: </p>" >> "${baseDir}"/email_log.html
-cat "${baseDir}"/csection1.txt \
+[ -f "${baseDir}"/csection1.txt ] && cat "${baseDir}"/csection1.txt \
     | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>" "$i""</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
@@ -1746,7 +1742,7 @@ cat "${baseDir}"/section3.txt \
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
 echo "<p> SNP counts: </p>" >> "${baseDir}"/email_log.html
-cat s"${baseDir}"/section4.txt \
+cat "${baseDir}"/section4.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' ssection4 \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
@@ -1760,14 +1756,14 @@ echo "</Body>" >> "${baseDir}"/email_log.html
 echo "</html>" >> "${baseDir}"/email_log.html
 
 #Cleanup
-rm "${baseDir}"/section1.txt
+[ -f "${baseDir}"/section1.txt ] && rm "${baseDir}"/section1.txt
+[ -f "${baseDir}"/csection1.txt ] && rm "${baseDir}"/csection1.txt
 rm "${baseDir}"/section2.txt
 rm "${baseDir}"/section3.txt
 rm "${baseDir}"/section4.txt
 rm "${baseDir}"/section5.txt
 rm "${baseDir}"/sectiontime.txt
-rm "${baseDir}"/ssection4.txt
-rm "${baseDir}"/csection1.txt
+
 # rm -r "${baseDir}"/all_vcfs/starting_files
 # zip -r starting_files.zip starting_files
 # rm -r starting_files
@@ -1792,8 +1788,4 @@ fi
 # rm "${baseDir}"/email_log.html
 
 #Closing comment
-echo ""
-echo "****************************** END ******************************"
-echo ""
-
-
+echo -e "\n****************************** END ******************************\n"
