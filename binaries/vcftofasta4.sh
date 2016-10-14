@@ -1019,7 +1019,7 @@ function fasta_table ()
             fi
         fi
 
-        echo ""${d}":" >> "${baseDir}"/section3.txt
+        echo ""${dName}":" >> "${baseDir}"/section4.txt
 
         #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
         snpTableMaker.pl \
@@ -1042,7 +1042,7 @@ function fasta_table ()
 function alignTable ()
 {
     d="$1"
-    # d=""${baseDir}"/all_groups/Group-14/fasta"
+    # d=""${baseDir}"/all_groups/Group-9/fasta"
     # d=""${baseDir}"/all_vcfs/fasta"
 
     #Group/Subgroup/Clade name
@@ -1099,6 +1099,16 @@ function alignTable ()
     #                 | tee >(rsvg-convert \
     #                         -f pdf \
     #                         "${d}"/"${dName}"-tree.svg \
+    
+    # reroot tree
+    nw_reroot \
+        "${d}"/RAxML_bestTree."$dName" \
+        root \
+        | tee "${d}"/tableinput."$dName" "${d}"/rooted_RAxML_bestTree."$dName" &>/dev/null
+
+    wait
+
+    mv "${d}"/rooted_RAxML_bestTree."$dName" "${d}"/RAxML_bestTree."$dName"
 
     #cleanup if exsists
     [ -f "${d}"/RAxML_parsimonyTree* ] && rm "${d}"/RAxML_parsimonyTree*
@@ -1140,9 +1150,9 @@ function alignTable ()
     # Add map qualities to sorted table
     echo "Adding map qualities..."
 
-    # Get just the position.  The chromosome must be removed
+    # Get just the position from first line.  The chromosome must be removed
     cat "${d}"/"${dName}".sorted_table.txt \
-        | awk ' NR = 1 {print $0}' \
+        | head -n 1 \
         | tr "\t" "\n" \
         | sed "1d" \
         | awk '{print NR, $0}' \
