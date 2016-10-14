@@ -215,7 +215,7 @@ shift $(($OPTIND - 1))
 
 # Environment controls:
 
-if [ "$1" == "ab1" ]; then
+if [ "$1" = "ab1" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt" #to change the name of vcf files
 
@@ -241,9 +241,9 @@ if [ "$1" == "ab1" ]; then
 
     echo "Script vcftofasta.sh ran using Brucella abortus bv 1, 2 or 4 variables" | tee "${baseDir}"/section5.txt
 
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "mel" ]; then
+elif [ "$1" = "mel" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -265,9 +265,9 @@ elif [ "$1" == "mel" ]; then
 
     echo "Script vcftofasta.sh ran using B. melitensis variables" | tee "${baseDir}"/section5.txt
 
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "suis1" ]; then
+elif [ "$1" = "suis1" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -289,9 +289,9 @@ elif [ "$1" == "suis1" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B. suis bv1 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "suis2" ]; then
+elif [ "$1" = "suis2" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -309,9 +309,9 @@ elif [ "$1" == "suis2" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B. suis bv2 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "suis3" ]; then
+elif [ "$1" = "suis3" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -329,9 +329,9 @@ elif [ "$1" == "suis3" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B. suis bv3 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "suis4" ]; then
+elif [ "$1" = "suis4" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -349,9 +349,9 @@ elif [ "$1" == "suis4" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B. suis bv4 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "canis" ]; then
+elif [ "$1" = "canis" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -374,9 +374,9 @@ elif [ "$1" == "canis" ]; then
 
     echo "vcftofasta.sh ran as B. canis"
     echo "Script vcftofasta.sh ran using B. canis variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "ceti1" ]; then
+elif [ "$1" = "ceti1" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -394,9 +394,9 @@ elif [ "$1" == "ceti1" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B ceti group 1 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "ceti2" ]; then
+elif [ "$1" = "ceti2" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -418,9 +418,9 @@ elif [ "$1" == "ceti2" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B ceti group 2 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
-elif [ "$1" == "ovis" ]; then
+elif [ "$1" = "ovis" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
 
@@ -442,11 +442,11 @@ elif [ "$1" == "ovis" ]; then
     highEnd=350 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using B. ovis variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 
 ### TB ###
 
-elif [ "$1" == "bovis" ]; then
+elif [ "$1" = "bovis" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -464,7 +464,7 @@ elif [ "$1" == "bovis" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using M. bovis variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     if [ "$eflag" ]; then
         echo "Only the "elite" bovis isolates are being ran"
@@ -486,7 +486,7 @@ elif [ "$1" == "bovis" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb1" ]; then
+elif [ "$1" = "tb1" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -502,7 +502,7 @@ elif [ "$1" == "tb1" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -515,7 +515,7 @@ elif [ "$1" == "tb1" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb2" ]; then
+elif [ "$1" = "tb2" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -531,7 +531,7 @@ elif [ "$1" == "tb2" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -544,7 +544,7 @@ elif [ "$1" == "tb2" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb3" ]; then
+elif [ "$1" = "tb3" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -560,7 +560,7 @@ elif [ "$1" == "tb3" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -573,7 +573,7 @@ elif [ "$1" == "tb3" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb4a" ]; then
+elif [ "$1" = "tb4a" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -591,7 +591,7 @@ elif [ "$1" == "tb4a" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -604,7 +604,7 @@ elif [ "$1" == "tb4a" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb4b" ]; then
+elif [ "$1" = "tb4b" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -620,7 +620,7 @@ elif [ "$1" == "tb4b" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -633,7 +633,7 @@ elif [ "$1" == "tb4b" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb5" ]; then
+elif [ "$1" = "tb5" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -649,7 +649,7 @@ elif [ "$1" == "tb5" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -662,7 +662,7 @@ elif [ "$1" == "tb5" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "tb6" ]; then
+elif [ "$1" = "tb6" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -679,7 +679,7 @@ elif [ "$1" == "tb6" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -692,7 +692,7 @@ elif [ "$1" == "tb6" ]; then
             /dev/stdin \
             "$filterdir"
 
-elif [ "$1" == "para" ]; then
+elif [ "$1" = "para" ]; then
 
     genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
 
@@ -710,7 +710,7 @@ elif [ "$1" == "para" ]; then
     highEnd=200 # QUAL range to change ALT to N
 
     echo "Script vcftofasta.sh ran using para variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca olga.andrievskaia@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
     # Excel tab label "New groupings"
@@ -792,7 +792,7 @@ function testDuplicates ()
     echo "Checking for empty or duplicated VCF files."
 
     directorytest="${baseDir##*/}" #name of directory where script was launched (or name of "$baseDir")
-    if [ "$directorytest" == "VCF_Source_All" ]; then # if where all the reference vcf files are stored
+    if [ "$directorytest" = "VCF_Source_All" ]; then # if where all the reference vcf files are stored
         echo "Change directory name and restart"
         exit 1
     fi
@@ -868,7 +868,7 @@ function filterFilespreparation ()
 # Change SNPs with low QUAL values to N, based on parameter set above in variable settings
 function changeLowCalls ()
 {
-    echo "Changeing low calls, started --> "$(date)""
+    echo -e "\nChanging low calls, started --> "$(date)""
     for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
         base=$(basename "$i")
         baseNoExt="${base%.*}"
@@ -901,7 +901,7 @@ function findpositionstofilter ()
         # echo "back: $back"
 
         positioncount=$(cat $(find "${d}" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" ' $1 == f && $2 == b {count++} END {print count}')
+            | awk -v f="$front" -v b="$back" ' $1 = f && $2 = b {count++} END {print count}')
 
         #echo "position count: $positioncount"
         if [ "$positioncount" -gt 2 ]; then
@@ -921,21 +921,21 @@ function findpositionstofilter ()
         #echo "back: $back"
 
         maxqual=$(cat $(find "$d" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" 'BEGIN{max=0} $1 == f && $2 == b {if ($6>max) max=$6} END {print max}' \
+            | awk -v f="$front" -v b="$back" 'BEGIN{max=0} $1 = f && $2 = b {if ($6>max) max=$6} END {print max}' \
             | sed 's/\..*//')
 
         avequal=$(cat $(find "${d}" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" '$6 != "." && $1 == f && $2 == b {print $6}' \
+            | awk -v f="$front" -v b="$back" '$6 != "." && $1 = f && $2 = b {print $6}' \
             | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' \
             | sed 's/\..*//')
 
         maxmap=$(cat $(find "$d" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" ' $1 == f && $2 == b {print $8}' \
+            | awk -v f="$front" -v b="$back" ' $1 = f && $2 = b {print $8}' \
             | sed 's/.*MQ=\(.....\).*/\1/' | awk 'BEGIN{max=0}{if ($1>max) max=$1} END {print max}' \
             | sed 's/\..*//')
 
         avemap=$(cat $(find "$d" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" '$6 != "." && $1 == f && $2 == b {print $8}' \
+            | awk -v f="$front" -v b="$back" '$6 != "." && $1 = f && $2 = b {print $8}' \
             | sed 's/.*MQ=\(.....\).*/\1/' \
             | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' \
             | sed 's/\..*//')
@@ -992,14 +992,18 @@ function fasta_table ()
 
         if [ "$d" != ""${baseDir}"/all_vcfs" ]; then #skip is in all_vcfs folder, the filtering has been done already
             #Filterout group/subgroup/clade specific positions
-            if [ "$FilterGroups" == "yes" ]; then
+            if [ "$FilterGroups" = "yes" ]; then
+
+                echo -e "\nFiltering positions for "$dName":"
+
                 #Mark vcf allowing areas of the genome to be removed from the SNP analysis
                 for i in $(find "$d" -maxdepth 1 -type f | grep -F ".vcf"); do #don't look at the backed up vcf folder (starting_files)
                     # i=""${d}"/MBWGS083.SNPsZeroCoverage.vcf"
                     m=$(basename "$i")
-                    n=$(echo "$m" | sed "$dropEXT")
+                    # n=$(echo "$m" | sed "$dropEXT")
+                    n="${m%%.*}"
 
-                    echo -e "\nFiltering a bit more "$n" with Group/Subgroup/Clade specific positions"
+                    echo -e "Working on "$n"..."
 
                     #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
                     regionRemover.pl \
@@ -1015,13 +1019,16 @@ function fasta_table ()
             fi
         fi
 
-        #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <fastaOutFolder> <fastaTable.tsv>
+        echo ""${d}":" >> "${baseDir}"/section3.txt
+
+        #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
         snpTableMaker.pl \
             "$genome" \
             "$d" \
             "$QUAL" \
             "$highEnd" \
             "${d}"/"${dName}"_AC1Report.txt \
+            "${baseDir}"/section4.txt \
             "${d}"/fasta \
             "${d}"/"${dName}".table.txt
         wait
@@ -1031,13 +1038,11 @@ function fasta_table ()
     done
 }
 
-#****************************************************************
 
 function alignTable ()
 {
-
     d="$1"
-    # d=""${baseDir}"/all_groups/Group-9/fasta"
+    # d=""${baseDir}"/all_groups/Group-14/fasta"
     # d=""${baseDir}"/all_vcfs/fasta"
 
     #Group/Subgroup/Clade name
@@ -1094,19 +1099,6 @@ function alignTable ()
     #                 | tee >(rsvg-convert \
     #                         -f pdf \
     #                         "${d}"/"${dName}"-tree.svg \
-    #                         | tee "${d}"/"${dName}"-tree.pdf 2&> /dev/null))
-
-    echo "Rerooting tree..."
-
-    nw_reroot \
-        "${d}"/RAxML_bestTree."$dName" \
-        root \
-        | tee "${d}"/tableinput."$dName" "${d}"/rooted_RAxML_bestTree."$dName" &>/dev/null
-
-    wait
-
-    mv "${d}"/rooted_RAxML_bestTree."$dName" "${d}"/RAxML_bestTree."$dName"
-    wait
 
     #cleanup if exsists
     [ -f "${d}"/RAxML_parsimonyTree* ] && rm "${d}"/RAxML_parsimonyTree*
@@ -1116,6 +1108,7 @@ function alignTable ()
         | tr "," "\n" \
         | sed -e 's/(//g' -e 's/)//g' \
         | grep -v "\.[0-9]*" \
+        | grep -v "[0-9]e-[0-9]" \
         | grep -v "root" \
         > "${d}"/cleanedAlignment.txt
 
@@ -1149,7 +1142,7 @@ function alignTable ()
 
     # Get just the position.  The chromosome must be removed
     cat "${d}"/"${dName}".sorted_table.txt \
-        | awk ' NR == 1 {print $0}' \
+        | awk ' NR = 1 {print $0}' \
         | tr "\t" "\n" \
         | sed "1d" \
         | awk '{print NR, $0}' \
@@ -1195,6 +1188,9 @@ function alignTable ()
     rm "${d}"/"${dName}".transposed_table.txt
     rm -r "${parent}"/starting_files
 }
+
+
+
 
 
 #################################################################################
@@ -1416,7 +1412,7 @@ wait
 #######################
 
 
-echo "Changing AC=1 to IUPAC -->  "$(date)""
+echo -e "\nChanging AC=1 to IUPAC -->  "$(date)""
 
 for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
     awk '
@@ -1466,17 +1462,20 @@ wait
 
 echo "Number of chromosomes:  "$chromCount""
 
-if [ "$FilterAllVCFs" == "yes" ]; then
+if [ "$FilterAllVCFs" = "yes" ]; then
     echo "Removing filtered regions --> "$(date)""
+
+    echo -e "\nFiltering positions from FilterToAll.txt"
 
     #Label filter field for positions to be filtered in all VCFs
     if [ "$chromCount" -ge 1 ]; then
 
         for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
             m=$(basename "$i")
-            n=$(echo "$m" | sed "$dropEXT")
+            # n=$(echo "$m" | sed "$dropEXT")
+            n="${m%%.*}"
 
-            echo -e "\nFiltering "$n" with FilterToAll.txt"
+            echo -e "Working on "$n"..."
 
             #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
             regionRemover.pl \
@@ -1488,7 +1487,7 @@ if [ "$FilterAllVCFs" == "yes" ]; then
 
             #Replace original vcf by the filtered one
             mv "${i}".filtered "$i"
-
+            wait
         done
     else
         echo "No chromosome detected."
@@ -1510,7 +1509,7 @@ fi
 
 #Find group using DefiningSNP positions and copy files to group folders
 
-echo "Find groups using DefiningSNP positions --> "$(date)""
+echo -e "\nFind groups using DefiningSNP positions --> "$(date)""
 
 #Usage: perl AConeInDefiningSNPs.pl <definingSnps.tsv> <vcfFolder> <section2.txt>
 groupFinder.pl \
@@ -1691,12 +1690,12 @@ echo -e "\n****************************************************\n" >> "${baseDir
 cat "${baseDir}"/section3.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************\n" >> "${baseDir}"/log.txt
 
-echo "SNP counts::" >> "${baseDir}"/log.txt
+echo "SNP counts:" >> "${baseDir}"/log.txt
 cat s"${baseDir}"/ssection4.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************" >> "${baseDir}"/log.txt
 
 echo "AC1 called SNPs"
-cat "${baseDir}"/emailAC1counts.txt | sort -nk1,1 >> "${baseDir}"/log.txt
+cat "${baseDir}"/all_vcfs/all_vcfs_AC1Report.txt >> "${baseDir}"/log.txt
 
 
 #####################
@@ -1713,6 +1712,7 @@ cat "${baseDir}"/sectiontime.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >  "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+
 cat "${baseDir}"/section5.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >> "${baseDir}"/email_log.html
@@ -1729,8 +1729,9 @@ cat "${baseDir}"/section2.txt \
     | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>" "$i""</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+
 cat "${baseDir}"/section3.txt \
-    | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>" "$i""</td>";print "</tr>"} END{print "</table>"}' \
+    | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>"$i"</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
@@ -1741,7 +1742,7 @@ cat s"${baseDir}"/section4.txt \
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
 echo "<p> AC1 called SNPs: </p>" >> "${baseDir}"/email_log.html
-cat "${baseDir}"/emailAC1counts.txt \
+cat "${baseDir}"/all_vcfs/all_vcfs_AC1Report.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >> "${baseDir}"/email_log.html
 

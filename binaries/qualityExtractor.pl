@@ -115,8 +115,8 @@ while (my $line = <$positionInFH>)
     chomp($line); #strip trailing carriage return
     next if $line eq ''; #skip if line is empty.
     
-    my $info = (split(/ /, $line))[1];
-    my ($chrom, $pos) = split(/-/, $info); #split fields by space
+    my $col2 = (split(/ /, $line))[1];
+    my ($chrom, $pos) = split(/-/, $col2); #split fields by space
     $positions{$chrom}{$pos} = $averageQual{$chrom}{$pos}; #no value added to the hash of hashes
 }
 

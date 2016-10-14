@@ -14,13 +14,14 @@ my $vcfFolder = $ARGV[1];
 my $minQual = $ARGV[2]; #QUAL=150 # Minimum quality for calling a SNP
 my $minAltQual = $ARGV[3]; #highEnd=200 # QUAL range to change ALT to N
 my $ac1Out = $ARGV[4];
-my $fastaOutFolder = $ARGV[5];
-my $fastaTable = $ARGV[6];
+my $countOut = $ARGV[5];
+my $fastaOutFolder = $ARGV[6];
+my $fastaTable = $ARGV[7];
 
 #Check if 7 arguments
-if (scalar(@ARGV) != 7)
+if (scalar(@ARGV) != 8)
 {
-   print "Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <fastaOutFolder> <fastaTable.tsv>\n";
+   print "Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>\n";
    exit;
 }
 
@@ -238,10 +239,6 @@ foreach my $sample ( sort keys %AC2)
 	}
 }
 
-my $filteredCount = keys %{ $fastas{$s}{$c} };
-print ("Total filtered SNPs: $filteredCount\n");
-
-
 my %informativePos;
 
 foreach my $sample ( sort keys %fastas)
@@ -258,8 +255,30 @@ foreach my $sample ( sort keys %fastas)
 	}
 }
 
+
+#################
+#               #
+#   SNP count   #
+#               #
+#################
+
+
+#Count report, append mode because file already exists
+open(my $countOutFH, ">>", $countOut) or die "Error writing to output file $countOut: $!\n";
+
+my $filteredCount = keys %{ $fastas{$s}{$c} };
 my $informativeCount = keys %{ $informativePos{$s}{$c} };
-print ("Total filtered SNPs: $informativeCount\n");
+
+#print to file
+print ($countOutFH "Total filtered SNPs: $filteredCount\n");
+print ($countOutFH "Total informative SNPs: $informativeCount\n\n");
+
+#print to screen
+print ("Total filtered SNPs: $filteredCount\n");
+print ("Total informative SNPs: $informativeCount\n\n");
+
+#Close count report file
+close($countOutFH);
 
 
 #################
