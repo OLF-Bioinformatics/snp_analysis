@@ -30,7 +30,7 @@ END
 
 
 #Where analysis will take place
-baseDir=""${HOME}"/analyses/mbovisCAN_script2v2test"
+baseDir=""${HOME}"/analyses/script2v2_test"
 
 #Where the VCF files are
 vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
@@ -2049,8 +2049,8 @@ if [ "$FilterAllVCFs" == yes ]; then
             n=$(echo "$m" | sed "$dropEXT")
 
             # Get usable positions in the VCF
-            # cat "$i" | awk '$1 !~ /#/ && $10 !~ /\.\/\./ {print $2}' > "${i}".file
-            cat "$i" | awk '$1 !~ /#/ {print $2}' > "${i}".file
+            cat "$i" | awk '$1 !~ /#/ && $10 !~ /\.\/\./ {print $2}' > "${i}".file
+            # cat "$i" | awk '$1 !~ /#/ {print $2}' > "${i}".file
 
             # Combine with positions that will be filtered
             cat "${FilterDirectory}/FilterToAll.txt" "${i}".file >> "${i}".catFile
@@ -2098,12 +2098,12 @@ if [ "$FilterAllVCFs" == yes ]; then
                 let COUNTER=COUNTER+1
                 #echo The counter is $COUNTER
                 #echo "********* In all_vcfs $n working on chromos $c **********"
-                # cat "${i}".body \
-                #     | awk -v c="$c" 'BEGIN{OFS="\t"} $1 !~ /#/ && $10 !~ /\.\/\./ && $1 == c {print $2}' \
-                #     > "${i}".filepositions
                 cat "${i}".body \
-                    | awk -v c="$c" 'BEGIN{OFS="\t"} $1 !~ /#/ && $1 == c {print $2}' \
+                    | awk -v c="$c" 'BEGIN{OFS="\t"} $1 !~ /#/ && $10 !~ /\.\/\./ && $1 == c {print $2}' \
                     > "${i}".filepositions
+                # cat "${i}".body \
+                #     | awk -v c="$c" 'BEGIN{OFS="\t"} $1 !~ /#/ && $1 == c {print $2}' \
+                #     > "${i}".filepositions
 
                 cat "${FilterDirectory}"/FilterToAll.txt \
                     | awk -v c="$c" ' $1 == c {print $2}' \

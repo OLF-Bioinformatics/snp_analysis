@@ -158,10 +158,9 @@ dropEXT="s/\(.*\)\..*/\1/" #Just drop the extention from the file
 
 echo -e "****************************** START ******************************\n"
 
-echo "Start Time: "$(date)"" > "${baseDir}"/sectiontime.txt
+echo "Start Time: "$(date "+%F %A %H:%M:%S")"" | tee "${baseDir}"/sectiontime.txt
 starttime=$(date +%s)
 argUsed="$1"
-echo "start time: "$uniqdate""
 
 
 ######################
@@ -211,6 +210,12 @@ while getopts 'cmea' OPTION; do
 done
 shift $(($OPTIND - 1))
 
+
+#if use the "elite" flag not with bovis
+if [ "$eflag" ] && [ "$1" != "bovis" ]; then 
+    echo "The \"-e\" option can only be used with \"bovis\""
+    exit 1
+fi
 
 
 # Environment controls:
@@ -470,7 +475,6 @@ elif [ "$1" = "bovis" ]; then
         echo "Only the "elite" bovis isolates are being ran"
     else
         echo "All bovis are being ran"
-        echo "Like to run selected elite isolates? Use... vcftofasta.sh -e bovis"
     fi
 
     # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
@@ -789,7 +793,7 @@ function removeIsolates ()
 # The regular expression used in sed should be changed based on vcf naming convention
 function testDuplicates ()
 {
-    echo "Checking for empty or duplicated VCF files."
+    echo -e "\nChecking for empty or duplicated VCF files."
 
     directorytest="${baseDir##*/}" #name of directory where script was launched (or name of "$baseDir")
     if [ "$directorytest" = "VCF_Source_All" ]; then # if where all the reference vcf files are stored
@@ -868,7 +872,7 @@ function filterFilespreparation ()
 # Change SNPs with low QUAL values to N, based on parameter set above in variable settings
 function changeLowCalls ()
 {
-    echo -e "\nChanging low calls, started --> "$(date)""
+    echo -e "\nChanging low calls, started --> "$(date "+%F %A %H:%M:%S")""
     for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
         base=$(basename "$i")
         baseNoExt="${base%.*}"
@@ -886,7 +890,7 @@ function changeLowCalls ()
 
 function findpositionstofilter ()
 {
-    echo "Finding positions to filter --> "$(date)""
+    echo "Finding positions to filter --> "$(date "+%F %A %H:%M:%S")""
 
     d="$1"
 
@@ -912,7 +916,7 @@ function findpositionstofilter ()
         fi
     done
 
-    echo "Filtering --> "$(date)""
+    echo "Filtering --> "$(date "+%F %A %H:%M:%S")""
 
     for p in $(cat "${d}"/positionlist.txt); do
         front=$(echo "$p" | sed 's/\(.*\)-\([0-9]*\)/\1/')
@@ -1010,7 +1014,7 @@ function fasta_table ()
                         "${filterdir}/FilterToAll.txt" \
                         "${baseDir}"/chroms.txt \
                         "$i" \
-                        "${i}".filtered #This overwrites the original files
+                        "${i}".filtered
                     wait
 
                     #Replace original vcf by the filtered one
@@ -1030,7 +1034,7 @@ function fasta_table ()
             "${d}"/"${dName}"_AC1Report.txt \
             "${baseDir}"/section4.txt \
             "${d}"/fasta \
-            "${d}"/"${dName}".table.txt
+            "${d}"/"${dName}".table.txt #> "${baseDir}"/"${dName}"_outputPostions.txt
         wait
 
         # Make a file containing all fasta files. Used awk instead of cat to insure newline between files
@@ -1058,7 +1062,7 @@ function alignTable ()
 
 
     # Beginning in fasta folder
-    echo -e "\nRAxML started on "$dName" --> "$(date)""
+    echo -e "\nRAxML started on "$dName" --> "$(date "+%F %A %H:%M:%S")""
 
     cat "${d}"/*.fas \
         | awk '{print $0}'  \
@@ -1263,7 +1267,7 @@ wait
 
 # Count the number of chromosomes used in the reference when VCFs were made.
 #singleFile=`ls *.vcf | head -1`
-echo "Counting the number of chromosomes in first 100 samples, started -->  "$(date)""
+echo -e "\nCounting the number of chromosomes in first 100 samples, started -->  "$(date "+%F %A %H:%M:%S")""
 chromCount=$(cat $(find -L "$baseDir" -type f | grep -F ".vcf" | head -100) \
                 | awk ' $0 !~ /^#/ {print $1}' \
                 | sort | uniq -d \
@@ -1275,7 +1279,8 @@ cat $(find -L "$baseDir" -type f | grep -F ".vcf" | head -100) \
     | sort | uniq -d \
     > "${baseDir}"/chroms.txt
 
-echo -e "These are the chromosomes/segments found:\n$(cat "${baseDir}"/chroms.txt)"
+#Chromosomes/segments found
+echo -e "$(cat "${baseDir}"/chroms.txt)"
 
 
 #################################################################################
@@ -1421,7 +1426,7 @@ wait
 #######################
 
 
-echo -e "\nChanging AC=1 to IUPAC -->  "$(date)""
+echo -e "\nChanging AC=1 to IUPAC -->  "$(date "+%F %A %H:%M:%S")""
 
 for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
     awk '
@@ -1472,9 +1477,8 @@ wait
 echo "Number of chromosomes:  "$chromCount""
 
 if [ "$FilterAllVCFs" = "yes" ]; then
-    echo "Removing filtered regions --> "$(date)""
 
-    echo -e "\nFiltering positions from FilterToAll.txt"
+    echo -e "\nFiltering out positions from FilterToAll.txt --> "$(date "+%F %A %H:%M:%S")""
 
     #Label filter field for positions to be filtered in all VCFs
     if [ "$chromCount" -ge 1 ]; then
@@ -1491,7 +1495,7 @@ if [ "$FilterAllVCFs" = "yes" ]; then
                 "${filterdir}/FilterToAll.txt" \
                 "${baseDir}"/chroms.txt \
                 "$i" \
-                "${i}".filtered #This overwrites the original files
+                "${i}".filtered
             wait
 
             #Replace original vcf by the filtered one
@@ -1518,7 +1522,7 @@ fi
 
 #Find group using DefiningSNP positions and copy files to group folders
 
-echo -e "\nFind groups using DefiningSNP positions --> "$(date)""
+echo -e "\nFind groups using DefiningSNP positions --> "$(date "+%F %A %H:%M:%S")""
 
 #Usage: perl AConeInDefiningSNPs.pl <definingSnps.tsv> <vcfFolder> <section2.txt>
 groupFinder.pl \
@@ -1562,14 +1566,14 @@ wait
 
 #all_vcfs
 if [ -n "$eflag" ] || [ -n "$aflag" ]; then
-    echo -e "\nCreating fasta table for all_vcfs --> "$(date)""
+    echo -e "\nCreating fasta table for all_vcfs --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_vcfs
     wait
 fi
 
 #all_groups
 if [ -n "$(ls -A "${baseDir}"/all_groups)" ]; then
-    echo -e "\nCreating fasta table for all_groups --> "$(date)""
+    echo -e "\nCreating fasta table for all_groups --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_groups
     wait
 else
@@ -1578,7 +1582,7 @@ fi
 
 #all_subgroups
 if [ -n "$(ls -A "${baseDir}"/all_subgroups)" ]; then
-    echo -e "\nCreating fasta table for all_subgroups --> "$(date)""
+    echo -e "\nCreating fasta table for all_subgroups --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_subgroups
     wait
 else
@@ -1587,7 +1591,7 @@ fi
 
 #all_clades
 if [ -n "$(ls -A "${baseDir}"/all_clades)" ]; then
-    echo -e "\nCreating fasta table for all_clades --> "$(date)""
+    echo -e "\nCreating fasta table for all_clades --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_clades
     wait
 else
@@ -1611,7 +1615,7 @@ fi
 #########################
 
 
-echo -e "\nOrganizing SNP tables --> "$(date)""
+echo -e "\nOrganizing SNP tables --> "$(date "+%F %A %H:%M:%S")""
 
 if [ -n "$eflag" ] || [ -n "$aflag" ]; then
     directories=($(find "$baseDir" -maxdepth 1 -type d \
@@ -1662,16 +1666,16 @@ wait
 #########################
 
 
-echo -e "\nPreparing final report --> "$(date)""
+# echo -e "\nPreparing final report --> "$(date "+%F %A %H:%M:%S")""
 
 [ -f "${baseDir}"/section1.txt ] && cat "${baseDir}"/section1.txt | column > "${baseDir}"/csection1.txt
 
 
 #Script execution time
-echo -e "\nEnd Time: "$(date)"" >> "${baseDir}"/sectiontime.txt
+echo -e "\nEnd Time: "$(date "+%F %A %H:%M:%S")"\n" | tee -a "${baseDir}"/sectiontime.txt
 endtime=$(date +%s)
 runtime=$((endtime-starttime))
-printf 'Runtime: %dh:%dm:%ds\n' $(($runtime/3600)) $(($runtime%3600/60)) $(($runtime%60)) >> "${baseDir}"/sectiontime.txt
+printf 'Runtime: %dh:%dm:%ds\n' $(($runtime/3600)) $(($runtime%3600/60)) $(($runtime%60)) | tee -a "${baseDir}"/sectiontime.txt
 
 
 #####################
@@ -1701,7 +1705,7 @@ echo "SNP counts:" >> "${baseDir}"/log.txt
 cat "${baseDir}"/section4.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************" >> "${baseDir}"/log.txt
 
-echo "AC1 called SNPs"
+echo "AC1 called SNPs" >> "${baseDir}"/log.txt
 cat "${baseDir}"/all_vcfs/all_vcfs_AC1Report.txt >> "${baseDir}"/log.txt
 echo -e "\n****************************************************" >> "${baseDir}"/log.txt
 
