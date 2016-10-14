@@ -1105,7 +1105,6 @@ function alignTable ()
         "${d}"/RAxML_bestTree."$dName" \
         root \
         | tee "${d}"/tableinput."$dName" "${d}"/rooted_RAxML_bestTree."$dName" &>/dev/null
-
     wait
 
     mv "${d}"/rooted_RAxML_bestTree."$dName" "${d}"/RAxML_bestTree."$dName"
@@ -1596,7 +1595,10 @@ else
 fi
 
 
-#For QA
+#Cleanup
+# rm -rf "$filterdir"
+
+#For QA, keep a copy of these files to reproduce analysis
 # cp "$DefiningSNPs" "$baseDir"
 # cp "${dependents}"/Table_Template.xlsx "$baseDir"
 # cp "$0" "$baseDir" #$0 is the name of the script itself
@@ -1743,7 +1745,7 @@ echo -e "\n****************************************************\n" >> "${baseDir
 
 echo "<p> SNP counts: </p>" >> "${baseDir}"/email_log.html
 cat "${baseDir}"/section4.txt \
-    | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' ssection4 \
+    | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
@@ -1763,11 +1765,7 @@ rm "${baseDir}"/section3.txt
 rm "${baseDir}"/section4.txt
 rm "${baseDir}"/section5.txt
 rm "${baseDir}"/sectiontime.txt
-
-# rm -r "${baseDir}"/all_vcfs/starting_files
-# zip -r starting_files.zip starting_files
-# rm -r starting_files
-#rm -r ${filterdir}
+rm -r "$filterdir"
 
 
 #####################
