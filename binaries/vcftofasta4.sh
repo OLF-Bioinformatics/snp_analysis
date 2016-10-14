@@ -86,10 +86,10 @@ END
 
 #Where analysis will take place
 # baseDir=""${HOME}"/analyses/mbovis_script2"
-baseDir=""${HOME}"/analyses/Barbortus_script2"
+baseDir=""${HOME}"/analyses/script2v4_test"
 
 #Where the VCF files are
-vcfPath="/home/bioinfo/Desktop/vcf_B-abortus"
+vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
 
 #####################
@@ -176,7 +176,6 @@ for i in $(find "$vcfPath" -type f | grep -F "SNPsZeroCoverage.vcf"); do
     name=$(basename "$i")
     ln -s "$i" "${baseDir}"/"$name"
 done
-
 
 
 #################
@@ -1000,14 +999,18 @@ function fasta_table ()
                     m=$(basename "$i")
                     n=$(echo "$m" | sed "$dropEXT")
 
-                    echo -e "Working on "$n"..."
+                    echo -e "\nFiltering a bit more "$n" with Group/Subgroup/Clade specific positions"
 
-                    #Usage: perl regionRemover.pl <FilterToAll.txt> <input.vcf> <filtered.vcf>
+                    #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
                     regionRemover.pl \
-                        "${filterdir}"/"${dName}".txt \
+                        "${filterdir}/FilterToAll.txt" \
+                        "${baseDir}"/chroms.txt \
                         "$i" \
-                        "$i" #This overwrites the original files
+                        "${i}".filtered #This overwrites the original files
                     wait
+
+                    #Replace original vcf by the filtered one
+                    mv "${i}".filtered "$i"
                 done
             fi
         fi
@@ -1034,7 +1037,7 @@ function alignTable ()
 {
 
     d="$1"
-    # d=""${baseDir}"/all_groups/Group-18/fasta"
+    # d=""${baseDir}"/all_groups/Group-9/fasta"
     # d=""${baseDir}"/all_vcfs/fasta"
 
     #Group/Subgroup/Clade name
@@ -1103,9 +1106,10 @@ function alignTable ()
     wait
 
     mv "${d}"/rooted_RAxML_bestTree."$dName" "${d}"/RAxML_bestTree."$dName"
+    wait
 
-    #cleanup
-    rm "${d}"/RAxML_parsimonyTree*
+    #cleanup if exsists
+    [ -f "${d}"/RAxML_parsimonyTree* ] && rm "${d}"/RAxML_parsimonyTree*
 
     cat "${d}"/tableinput."$dName" \
         | tr ":" "\n" \
@@ -1120,10 +1124,12 @@ function alignTable ()
     (echo "reference_call"; cat "${d}"/cleanedAlignment.txt) \
         > "${d}"/cleanedAlignment.txt.temp
     mv "${d}"/cleanedAlignment.txt{.temp,}
+    wait
 
     (echo "reference_pos"; cat "${d}"/cleanedAlignment.txt) \
         > "${d}"/cleanedAlignment.txt.temp
     mv "${d}"/cleanedAlignment.txt{.temp,}
+    wait
 
     #Sort and organize SNP table
     sortOrganizeTable.py \
@@ -1467,6 +1473,10 @@ if [ "$FilterAllVCFs" == "yes" ]; then
     if [ "$chromCount" -ge 1 ]; then
 
         for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+            m=$(basename "$i")
+            n=$(echo "$m" | sed "$dropEXT")
+
+            echo -e "\nFiltering "$n" with FilterToAll.txt"
 
             #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
             regionRemover.pl \
@@ -1609,22 +1619,21 @@ wait
 
 #all_groups/all_subgroups/all_clades
 for d in "${directories[@]}"; do
-    # echo ""$d""
-    if [ -n "$(find "$d" -maxdepth 1 -type d | grep -vF "starting_files" | grep -vF "fasta" | awk 'NR > 1')" ]; then
+    # echo "$d"
+    if [ -n "$(find "$d" -maxdepth 1 -type d | grep -vF "starting_files\|fasta" | awk 'NR > 1')" ] && [ "$d" != ""${baseDir}"/all_vcfs" ]; then 
         subdirectories=($(find "$d" -maxdepth 1 -type d \
-            | grep -vF "starting_files" \
-            | grep -vF "fasta" \
+            | grep -vF "starting_files\|fasta" \
             | awk 'NR > 1'))
 
         for sd in "${subdirectories[@]}"; do
-            # echo -e "$sd"
+            # echo "$sd" 
             alignTable "${sd}"/fasta
             wait
         done
 
         wait
     elif [ "$d" = ""${baseDir}"/all_vcfs" ]; then #if all_vcfs folder, there is no subfolders for groups
-        # echo -e "$d"
+        # echo "$d"
         alignTable "${d}"/fasta
         wait
     else
@@ -1633,6 +1642,7 @@ for d in "${directories[@]}"; do
 done
 
 wait
+
 
 #########################
 #                       #

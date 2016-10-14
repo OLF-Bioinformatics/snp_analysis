@@ -1760,6 +1760,8 @@ if [ "$FilterAllVCFs" == "yes" ]; then
 
         for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
 
+            echo -e "\nFiltering $(basename "$i")"
+
             #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
             regionRemover.pl \
                 "${filterdir}/FilterToAll.txt" \
@@ -1799,134 +1801,6 @@ groupFinder.pl \
     "$QUAL"
 
 wait
-
-
-# # Print header
-# echo -e "NAME\tGROUP\tSUBGROUP\tCLADE" > "${baseDir}"/section3.txt
-
-# for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-
-#     # Get quality positions in VCF and include chromosome identification
-#     cat "$i" \
-#         | awk -v Q="$QUAL" ' $0 !~ /^#/ && $6 > Q && $8 ~ /^AC=2;/ {print $1 "\t" $2}' \
-#         > "${i%.vcf}.quality"
-
-#     ##----Group
-
-#     # If a group number matches a quality position in the VCF (formatedpos) then print the position
-#     cat "$DefiningSNPs" | grep "Group" > "${baseDir}"/groupsnps.txt
-
-
-#     awk 'NR==FNR { a[$0];next } $3 in a' "${i%.vcf}.quality" "${baseDir}"/groupsnps.txt \
-#         | awk '{print $1}' \
-#         > "${i%.vcf}.group-foundpositions"
-
-#     echo "This is the Group Numbers: $(cat "${i%.vcf}.group-foundpositions")"
-
-#     # Typically a single group position is found, and the VCF will be placed into just one group.
-#     #It is posible that an isolate will need to go in more than one group because of were it falls on the tree.
-#     #In this case there may be 2 group, or more, group positions found.
-#     #The number of group positions found is captured in sizeGroup.
-#     sizeGroup=$(cat "${i%.vcf}.group-foundpositions" | wc -l)
-
-#     # Loop through the number of groups positions found
-#     loops=$(cat "${i%.vcf}.group-foundpositions")
-
-#     if [ "$sizeGroup" -lt 1 ]; then # There was not a position found that places VCF into group
-#         echo ""$i" Group not found" >> "${baseDir}"/section3.txt
-#         echo ""$i" was not assigned a Group"
-#     elif [ "$sizeGroup" -gt 1 ]; then
-#         echo ""$i" has multiple groups" >> "${baseDir}"/section3.txt
-#         echo ""$i" has multiple groups"
-#         for l in "$loops"; do
-#             echo "Making group "$i""
-#             mkdir -p "${baseDir}"/Group-"${l}" #Make groupNumber folder if one does not exist.
-#             cp "$i" "${baseDir}"/Group-"${l}"/ #Then copy to each folder
-#         done
-#     else
-#         echo "Just one group"
-#         mkdir -p "${baseDir}"/Group-"${loops}" #Make groupNumber folder if one does not exist.
-#         cp "$i" "${baseDir}"/Group-"${loops}"/ #Then copy to each folder
-#     fi
-
-#     ##----Subgroup
-
-#     # If a group number matches a quality position in the VCF (formatedpos) then print the position
-#     cat "$DefiningSNPs" | grep "Subgroup" > "${baseDir}"/subgroupsnps.txt
-
-#     awk 'NR==FNR{a[$0];next}$3 in a' "${i%.vcf}.quality" "${baseDir}"/subgroupsnps.txt \
-#         | awk '{print $1}' \
-#         > "${i%.vcf}.subgroup-foundpositions"
-
-#     echo "This is the Subgroup Numbers: $(cat "${i%.vcf}.subgroup-foundpositions")"
-
-#     # Typically a single group position is found, and the VCF will be placed into just one group.  It is posible that an isolate will need to go in more than one group because of were it falls on the tree.  In this case there may be 2 group, or more, group positions found.  The number of group positions found is captured in sizeGroup.
-#     sizeGroup=$(cat "${i%.vcf}.subgroup-foundpositions" | wc -l)
-
-#     # Loop through the number of groups positions found
-#     loops=$(cat "${i%.vcf}.subgroup-foundpositions")
-
-#     if [ "$sizeGroup" -lt 1 ]; then # There was not a position found that places VCF into group
-#         echo ""$i" was not assigned a Subgroup"
-#     elif [ "$sizeGroup" -gt 1 ]; then
-#         echo ""$i" has multiple subgroups" >> "${baseDir}"/section3.txt
-#         echo ""$i" has multiple subgroups"
-#         for l in "$loops"; do
-#             echo "Making subgroup "$i""
-#             mkdir -p "${baseDir}"/Subgroup-"${l}" #Make groupNumber folder if one does not exist.
-#             cp "$i" "${baseDir}"/Subgroup-"${l}"/ #Then copy to each folder
-#         done
-#     else
-#         echo "Just one Subgroup"
-#         mkdir -p "${baseDir}"/Subgroup-"${loops}" #Make groupNumber folder if one does not exist.
-#         cp "$i" "${baseDir}"/Subgroup-"${loops}"/ #Then copy to each folder
-#     fi
-
-#     ##----Clade
-
-#     # If a group number matches a quality position in the VCF (formatedpos) then print the position
-#     cat "$DefiningSNPs" | grep "Clade" > "${baseDir}"/cladesnps.txt
-
-#     awk 'NR==FNR{a[$0];next}$3 in a' "${i%.vcf}.quality" "${baseDir}"/cladesnps.txt \
-#         | awk '{print $1}' \
-#         > "${i%.vcf}.clade-foundpositions"
-
-#     echo "This is the Clade Numbers: $(cat "${i%.vcf}.clade-foundpositions")"
-
-#     # Typically a single group position is found, and the VCF will be placed into just one group.
-#     #It is posible that an isolate will need to go in more than one group because of were it falls on the tree.
-#     #In this case there may be 2 group, or more, group positions found.  The number of group positions found is captured in sizeGroup.
-#     sizeGroup=$(cat "${i%.vcf}.clade-foundpositions" | wc -l)
-
-#     # Loop through the number of groups positions found
-#     loops=$(cat "${i%.vcf}.clade-foundpositions")
-
-#     if [ "$sizeGroup" -lt 1 ]; then # There was not a position found that places VCF into group
-#         echo ""$i" was not assigned a Clade"
-#     elif [ "$sizeGroup" -gt 1 ]; then
-#         echo ""$i" has multiple clades" >> "${baseDir}"/section3.txt
-#         echo ""$i" has multiple clades"
-#         for l in "$loops"; do
-#             echo "making clade "$i""
-#             mkdir -p "${baseDir}"/Clade-"${l}" #Make groupNumber folder if one does not exist.
-#             cp "$i" "${baseDir}"/Clade-"${l}"/ #Then copy to each folder
-#         done
-#     else
-#         echo "Just one clade"
-#         mkdir -p "${baseDir}"/Clade-"${loops}" #Make groupNumber folder if one does not exist.
-#         cp "$i" "${baseDir}"/Clade-"${loops}"/ #Then copy to each folder
-#     fi
-
-#     echo "${i%.vcf} $(cat "${i%.vcf}.group-foundpositions" "${i%.vcf}.subgroup-foundpositions" "${i%.vcf}.clade-foundpositions")" \
-#         | tr "\n" "\t" >> "${baseDir}"/section3.txt
-#     echo "" >> "${baseDir}"/section3.txt
-
-#     #cleanup
-#     rm "${i%.vcf}.quality"
-#     rm "${baseDir}"/*snps.txt
-#     rm "${baseDir}"/*foundpositions
-
-#     ######
 
 [ -d "${baseDir}"/all_vcfs ] || mkdir -p "${baseDir}"/all_vcfs #Make all_vcfs folder if one does not exist.
 for i in $(find -L "$baseDir" -maxdepth 1 -type f | grep -F ".vcf"); do

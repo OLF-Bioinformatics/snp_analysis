@@ -77,7 +77,7 @@ cat "${reports}"/email_processZips.txt \
 
 # rm "${reports}"/email_processZips.txt
 
-if [ $1 = "me" ]; then
+if [ $1  ] && [ "$1" = "me" ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
 else
     email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaea@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"

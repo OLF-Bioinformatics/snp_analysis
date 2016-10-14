@@ -53,17 +53,26 @@ foreach my $handle (@vcfFilesFH)
         my @fields = split(/\t/, $line);
         my ($c, $p, $info) = @fields[0..1,7]; #chromosome, position, info field
         
-        #extract MQ from the info field
-        my @inf = split(/;/, $info);
-        my @info = grep(/^MQ/, @inf);
-        my $MQ = $info[0];
-        $MQ =~ s/MQ=//;
-        
+        my $MQ;
+
+        # AF2122_NC002945 306698  .   N   .   .   .   .   GT  ./.
+        if ($info eq ".")
+        {
+            $MQ = 0;
+        }
+        else
+        {
+            #extract MQ from the info field
+            my @inf = split(/;/, $info);
+            
+            my @info = grep(/^MQ/, @inf);
+            $MQ = $info[0];
+            $MQ =~ s/MQ=//;
+        }
         
         #http://docstore.mik.ua/orelly/perl2/prog/ch09_02.htm
         push @{ $qual{$c}{$p} }, $MQ;
     }
-
 }
 
 #close VCF files handles

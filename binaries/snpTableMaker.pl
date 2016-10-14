@@ -202,12 +202,23 @@ while (my $seq = $seqIO -> next_seq)
 my (%fastas, %counts);
 my $allele;
 
+#variable to store the last value of the next loop
+my $s;
+my $c;
+my $p;
+
 foreach my $sample ( sort keys %AC2)
 {
+	$s = $sample;
+	
 	foreach my $chrom (sort keys %{ $AC2{$sample} } )
 	{
+		$c = $chrom;
+		
 		foreach my $pos ( sort { $a <=> $b } (@{ $allAC2{$chrom} }) )
 		{
+			$p = $pos;
+			
 			#position was genotyped in sample
 			# or is AC=1, but was also found in AC=2
 			if( grep(/\b$pos\b/, @{ $AC2{$sample}{$chrom} }) || grep(/\b$pos\b/, @{ $finalAC1{$sample}{$chrom} }) ) #"\b is for word boundary -> exact word match"
@@ -227,6 +238,9 @@ foreach my $sample ( sort keys %AC2)
 	}
 }
 
+my $filteredCount = keys %{ $fastas{$s}{$c} };
+print ("Total filtered SNPs: $filteredCount\n");
+
 
 my %informativePos;
 
@@ -243,6 +257,9 @@ foreach my $sample ( sort keys %fastas)
 		}
 	}
 }
+
+my $informativeCount = keys %{ $informativePos{$s}{$c} };
+print ("Total filtered SNPs: $informativeCount\n");
 
 
 #################
@@ -270,10 +287,13 @@ foreach my $sample (sort keys %informativePos)
 	
 	foreach my $chrom (sort keys %{ $informativePos{$sample} })
 	{
+		# print "$chrom\n";
 		foreach my $pos (sort { $informativePos{$sample}{$chrom}{$a} <=> $informativePos{$sample}{$chrom}{$b} } keys %{ $informativePos{$sample}{$chrom} }) #sort numerically by position for output
 		{
 			print ($fastaFH join("", @{ $informativePos{$sample}{$chrom}{$pos} }));
+			# print "\t$pos";
 		}
+		# print "\n";
 	}
 	print ($fastaFH "\n");
 	
