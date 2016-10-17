@@ -35,6 +35,9 @@ baseDir=""${HOME}"/analyses/script2v2_test"
 #Where the VCF files are
 vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
+#script dependencies
+dependents=""${HOME}"/prog/snp_analysis/script_dependents"
+
 
 #####################
 #                   #
@@ -42,9 +45,6 @@ vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 #                   #
 #####################
 
-
-#script dependencies
-dependents=""${HOME}"/prog/snp_analysis/script_dependents"
 
 #time stamp of analysis
 uniqdate="$(date "+%Y-%m-%dat%Hh%Mm%Ss")"
