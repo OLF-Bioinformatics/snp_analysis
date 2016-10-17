@@ -5,7 +5,6 @@ use warnings;
 use diagnostics;
 use Array::Utils qw(:all);
 use Bio::SeqIO;
-use List::Util qw(any);
 
 
 #I/O files
