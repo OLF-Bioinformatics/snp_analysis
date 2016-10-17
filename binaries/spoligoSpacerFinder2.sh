@@ -71,20 +71,25 @@ done
 # echo "${octalCode[@]}"
 
 
-#reporting
-WGSpoligo=$(echo "${octalCode[@]}" | tr -d " ")
+#################
+#               #
+#   Reporting   #
+#               #
+#################
 
-# Add info to spoligoCheck.txt
-echo "<----- "$n" ----->" | tee -a "${reports}"/spoligoCheck.txt
-echo "WGSpoligo: "$WGSpoligo"" | tee -a "${reports}"/spoligoCheck.txt
+
+WGSpoligo=$(echo "${octalCode[@]}" | tr -d " ")
+echo -e "Whole genome based spoligotyping\n" | tee -a "${reports}"/spoligoCheck.txt "${reports}"/spoligoCheck_all.txt
+echo ""$n": "$WGSpoligo"" | tee -a "${reports}"/spoligoCheck.txt
+# echo "WGSpoligo: "$WGSpoligo"" | tee -a "${reports}"/spoligoCheck.txt
 
 #Make FileMaker file
-dateFile=$(date "+%Y%m%d")
-printf "%s\t%s\n" "$n" "$WGSpoligo" >> "${reports}"/"${dateFile}"_FileMakerSpoligoImport.txt
+# dateFile=$(date "+%Y%m%d")
+# printf "%s\t%s\n" "$n" "$WGSpoligo" >> "${reports}"/"${dateFile}"_FileMakerSpoligoImport.txt
 
 # Add infor to spoligoCheck_all.txt
-echo "<----- "$n" ----->" >> "${reports}"/spoligoCheck_all.txt
-echo "WGSpoligo: "$WGSpoligo"" >> "${reports}"/spoligoCheck_all.txt
+# echo "<----- "$n" ----->" >> "${reports}"/spoligoCheck_all.txt
+# echo "WGSpoligo: "$WGSpoligo"" >> "${reports}"/spoligoCheck_all.txt
 
 
 #

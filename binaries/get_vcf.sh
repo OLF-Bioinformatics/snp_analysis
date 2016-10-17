@@ -45,7 +45,7 @@ for i in $(find "${HOME}"/analyses/mbovisCAN_script2v2a/all_groups -maxdepth 1 -
     samples=($(find "${i}"/fasta -type f | grep -F ".fas" | grep -vF "root")) #samples in the group
 
     # echo "${samples[@]}" | tr " " "\n" #Debug, print array content on screen. Replace spaces by carriage return.
-
+# done
     gFolder="${reportFolder}"/"${group}" #output folder for the group
     [ -d "$gFolder" ] || mkdir -p "$gFolder" #create it if doesn't exist
 
@@ -56,9 +56,16 @@ for i in $(find "${HOME}"/analyses/mbovisCAN_script2v2a/all_groups -maxdepth 1 -
         sampleNameNoExt="${sampleName%.*}"
         # echo $sampleNameNoExt
 
+        #realigned+recalibrated bam (All reads)
+        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/realigned/"${sampleNameNoExt}"_realigned_recalibrated.bam "$gFolder" #bam
+        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/realigned/"${sampleNameNoExt}"_realigned_recalibrated.bai "$gFolder" #bam index file (not sure it's needed for IGV)
+
+        #bam from from HaplotypeCaller bamout (Only read used to call variants)
+        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_hapotypes.bam "$gFolder" #bam
+        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_hapotypes.bai "$gFolder" #bam index file (not sure it's needed for IGV)
+
+        #vcf
         cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".vcf "$gFolder" #vcf (might need the vcf index file too?)
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".bam "$gFolder" #bam
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".bai "$gFolder" #bam index file (not sure it's needed for IGV)
     done
 
 
