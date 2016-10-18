@@ -18,49 +18,59 @@
 
 
 #I/O
-folder=$(readlink -e "$1") 
-conversionTable=$(readlink -e "$2")
+# folder=$(readlink -e "$1") 
+# conversionTable=$(readlink -e "$2")
+
+folder="$1"
+conversionTable="$2"
 
 
 ###### CHECKS ######
 
+# lack        0;30     Dark Gray     1;30
+# Red          0;31     Light Red     1;31
+# Green        0;32     Light Green   1;32
+# Brown/Orange 0;33     Yellow        1;33
+# Blue         0;34     Light Blue    1;34
+# Purple       0;35     Light Purple  1;35
+# Cyan         0;36     Light Cyan    1;36
+# Light Gray   0;37     White         1;37
 
-#test if argument 1 is a folder (and exists) 
-[ -d "$folder" ] && [ -n "$folder" ] || \
-echo -e "Invalid folder\n\
-The folder specified does not exist\n\n\
-Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>" || exit 1
+RED='\033[1;31m'
+BLUE='\033[1;34m'
+GREEN='\033[1;32m'
+NC='\033[0m' # No Color
 
+#test if argument 1 is a folder (and exists)
+if [ ! -d "$folder" ]; then
+    printf ""${RED}"Invalid folder\n"${GREEN}"The folder specified does not exist\n"${BLUE}"Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>\n"${NC}""
+    exit 1
+fi
 
 #test if argument 1 is a folder, if it exists and if it's not empty
-[ $(ls "$folder" | wc -l) -gt 0  ] || \
-echo -e "Invalid folder\n\
-The folder specified is empty\n\n\
-Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>" || exit 1
-
-
-#test if argument 2 is a valid tab-sperated files with two fileds
-[ -e "$conversionTable" ] || \
-echo -e "Conversion table file doest not exist\n\
-The conversion table should be a tab-separated file with two columns:\n\n\
-current_name\t desired_name\n\n\
-Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>" || exit 1
-
+if [ $(ls "$folder" | wc -l) -eq 0 ]; then
+    printf ""${RED}"The specified folder is empty\n"${BLUE}"Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>\n"${NC}""
+    exit 1
+fi
 
 #test if argument 2 is a valid tab-sperated files with two fileds
-[ $(head -n 1 "$conversionTable" | awk '{print NF}') -eq 2 ] || \
-echo -e "Wrong conversion table format\n\
-The conversion table should be a tab-separated file with two columns:\n\n\
-current_name\t desired_name\n\n\
-Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>" || exit 1
+if [ ! -f "$conversionTable" ]; then
+    printf ""${RED}"Provided conversion table file doest not exist\n"${BLUE}"Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>\n"${NC}""
+    exit 1
+fi
 
+#test if argument 2 is a valid tab-sperated files with two fileds
+if [ $(head -n 1 "$conversionTable" | awk '{print NF}') -ne 2 ]; then
+    printf ""${RED}"Wrong conversion table format\n"${GREEN}"The conversion table should be a tab-separated file with two columns:\ncurrent_name\t desired_name\n"${BLUE}"Usage: bash rename.sh <folderWithFilesToRename> <conversionTable>\n"${NC}""
+    exit 1
+fi
 
 ##########################
 
 
-#The renaming loop
+#The text replacing loop
 for i in $(find "$folder" -type f); do
-	awk 'NR==FNR {a[$1]=$2;next} {for ( i in a) gsub(i,a[i])}1' "$conversionTable" "$i" > "${i}".renamed
+    awk 'NR==FNR {a[$1]=$2;next} {for ( i in a) gsub(i,a[i])}1' "$conversionTable" "$i" > "${i}".renamed
     mv  "${i}".renamed "$i"
 done
 
