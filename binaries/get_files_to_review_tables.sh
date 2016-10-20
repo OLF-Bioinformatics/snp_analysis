@@ -30,7 +30,7 @@
 allGroups=""${HOME}"/analyses/mbovisCAN_script2v2a/all_groups"
 
 #Where to put the files needed to review the SNP table
-reportFolder=""${HOME}"/Desktop/Olga_vcf_mbovisCAN"
+reportFolder="/media/bioinfo/Olga - NGS/Olga_vcf_mbovisCAN"
 [ -d "$reportFolder" ] || mkdir -p "$reportFolder" #create it if doesn't exist
 
 

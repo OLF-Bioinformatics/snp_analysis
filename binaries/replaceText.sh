@@ -69,7 +69,8 @@ fi
 
 
 #The text replacing loop
-for i in $(find "$folder" -type f); do
+# for i in $(find "$folder" -type f); do #doesn't work when path/file names have spaces
+find "$folder" -type f | grep -F "organizedTable" | while read i; do
     awk 'NR==FNR {a[$1]=$2;next} {for ( i in a) gsub(i,a[i])}1' "$conversionTable" "$i" > "${i}".renamed
     mv  "${i}".renamed "$i"
 done
