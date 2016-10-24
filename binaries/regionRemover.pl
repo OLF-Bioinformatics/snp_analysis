@@ -72,11 +72,11 @@ while (my $line = <$positionInFH>)
         push (@{ $positions{$chrom}{$pos} }, "1");
     }
     else # if (scalar(@chroms) > 1)
-    #If no chrom is present, this error is handled in the parent bash script
     {
         my ($chrom, $pos) = split(/\t/, $line);
         push (@{ $positions{$chrom}{$pos} }, "1");
     }
+    #If no chrom is present, this error is handled in the parent bash script
 }
 
 #Close position file

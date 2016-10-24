@@ -70,7 +70,7 @@ for i in $(find "$allGroups" -maxdepth 1 -type d | grep -F "Group");do
         cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_haplotypes.bai "$gFolder" #bam index file (not sure it's needed for IGV)
 
         #vcf
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".vcf "$gFolder" #vcf (might need the vcf index file too?)
+        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".SNPsZeroCoverage.vcf "$gFolder" #vcf (might need the vcf index file too?)
     done
 
     #copy table and tree file from script2

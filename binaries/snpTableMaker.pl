@@ -203,9 +203,10 @@ my (%fastas, %counts);
 my $allele;
 
 #variable to store the last value of the next loop
+#my %hash;
 my $s;
-my $c;
-my $p;
+#my $c;
+#my $p;
 
 foreach my $sample ( sort keys %AC2)
 {
@@ -213,11 +214,8 @@ foreach my $sample ( sort keys %AC2)
     
     foreach my $chrom (sort keys %{ $AC2{$sample} } )
     {
-        $c = $chrom;
-        
         foreach my $pos ( sort { $a <=> $b } (@{ $allAC2{$chrom} }) )
         {
-            $p = $pos;
             
             #position was genotyped in sample
             # or is AC=1, but was also found in AC=2
@@ -230,8 +228,10 @@ foreach my $sample ( sort keys %AC2)
             else
             {
                 #Fill with reference genome allele information
-                $allele = substr( @{ $ref{$chrom} }[0], $pos-1, 1);
+                #print ("$sample, $chrom, $pos\n");
+                $allele = substr( @{ $ref{$chrom} }[0], $pos-1, 1); #or die "$sample, $chrom, $pos";
             }
+            #print "$sample, $chrom, $pos\n";
             push ( @{ $fastas{$sample}{$chrom}{$pos} }, $allele);
             push ( @{ $counts{$chrom}{$pos} }, $allele) unless (grep {$_ eq $allele} @{ $counts{$chrom}{$pos} } );
         }
@@ -265,8 +265,16 @@ foreach my $sample ( sort keys %fastas)
 #Count report, append mode because file already exists
 open(my $countOutFH, ">>", $countOut) or die "Error writing to output file $countOut: $!\n";
 
-my $filteredCount = keys %{ $fastas{$s}{$c} };
-my $informativeCount = keys %{ $informativePos{$s}{$c} };
+my $filteredCount = 0; #= keys %{ $fastas{$s}{$c} };
+my $informativeCount = 0; # = keys %{ $informativePos{$s}{$c} };
+
+
+foreach my $chrom ( sort keys %{ $fastas{$s} } )
+{
+    $filteredCount += keys %{ $fastas{$s}{$chrom} };
+    $informativeCount += keys %{ $informativePos{$s}{$chrom} };
+}
+
 
 #print to file
 print ($countOutFH "Total filtered SNPs: $filteredCount\n");
@@ -286,13 +294,22 @@ close($countOutFH);
 #               #
 #################
 
-my @posList;
-foreach my $pos (sort keys %{ $informativePos{$s}{$c} })
+my %posList;
+foreach my $chrom ( sort keys %{ $fastas{$s} } )
 {
-    push ( @posList, $pos);
+    foreach my $pos (sort keys %{ $informativePos{$s}{$chrom} })
+    {
+        push ( @{ $posList{$chrom} }, $pos);
+    }
 }
 
-my @posListSorted = sort { $a <=> $b } @posList;
+my %posListSorted;
+foreach my $chrom ( sort keys %{ $fastas{$s} } )
+{
+    push ( @{ $posListSorted{$chrom} }, sort { $a <=> $b } @{ $posList{$chrom} });
+}
+
+
 
 #Output parsimony SNPs concatenated in table and fasta format
 
@@ -315,7 +332,7 @@ foreach my $sample (sort keys %informativePos)
     foreach my $chrom (sort keys %{ $informativePos{$sample} })
     {
         # print "\t$chrom:\n";
-        foreach my $pos (@posListSorted)
+        foreach my $pos ( @{ $posListSorted{$chrom} } )
         # foreach my $pos (sort { $informativePos{$sample}{$chrom}{$a} <=> $informativePos{$sample}{$chrom}{$b} } keys %{ $informativePos{$sample}{$chrom} }) #sort numerically by position for output
         {
             print ($fastaFH join("", @{ $informativePos{$sample}{$chrom}{$pos} }));
@@ -350,7 +367,7 @@ foreach my $chrom (sort keys %finalPos)
 {
     # print "\t$chrom:\n";
     # foreach my $pos (sort { $finalPos{$chrom}{$a} <=> $finalPos{$chrom}{$b} } keys %{ $finalPos{$chrom} }) #sort numerically by position for output
-    foreach my $pos (@posListSorted)
+    foreach my $pos ( @{ $posListSorted{$chrom} } )
     {
         # print "\t\t$pos\n";
         my $allele = substr( @{ $ref{$chrom} }[0], $pos-1, 1);
@@ -378,7 +395,7 @@ print ($tableFH "reference_pos");
 foreach my $chrom (sort keys %finalPos)
 {
     # foreach my $pos (sort { $finalPos{$chrom}{$a} <=> $finalPos{$chrom}{$b} } keys %{ $finalPos{$chrom} }) #sort numerically by position for output
-    foreach my $pos (@posListSorted)
+    foreach my $pos ( @{ $posListSorted{$chrom} } )
     {
         print ($tableFH "\t$chrom-$pos");
     }
@@ -390,7 +407,7 @@ print ($tableFH "\nreference_call");
 foreach my $chrom (sort keys %finalPos)
 {
     # foreach my $pos (sort { $finalPos{$chrom}{$a} <=> $finalPos{$chrom}{$b} } keys %{ $finalPos{$chrom} }) #sort numerically by position for output
-    foreach my $pos (@posListSorted)
+    foreach my $pos ( @{ $posListSorted{$chrom} } )
     {
         my $allele = substr( @{ $ref{$chrom} }[0], $pos-1, 1);
         print ($tableFH "\t$allele");
@@ -404,7 +421,7 @@ foreach my $sample (sort keys %informativePos)
     foreach my $chrom (sort keys %{ $informativePos{$sample} })
     {
         # foreach my $pos (sort { $informativePos{$sample}{$chrom}{$a} <=> $informativePos{$sample}{$chrom}{$b} } keys %{ $informativePos{$sample}{$chrom} }) #sort numerically by position for output
-        foreach my $pos (@posListSorted)
+        foreach my $pos ( @{ $posListSorted{$chrom} } )
         {
             print ($tableFH "\t@{ $informativePos{$sample}{$chrom}{$pos} }");
         }

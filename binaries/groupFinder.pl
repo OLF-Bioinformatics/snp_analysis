@@ -96,7 +96,7 @@ foreach my $handle (@vcfFilesFH)
 		#put VCF line into array
 		my @fields = split(/\t/, $line);
 		my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $SAMPLE) = @fields[0..9];
-		my $AC = (split(/;/, $INFO))[0];
+		my $AC = (split(/;/, $INFO))[0]; #AC is always the first field
 		
 		
 		#AC=2 postions which are Defining SNPs and found in VCF file
@@ -152,7 +152,7 @@ foreach my $sample (sort keys %ac2InDefining)
 			
 			#copy("sourcefile","destinationfile") or die "Copy failed: $!";
 			my $vcf = "$vcfFolder/$sample.SNPsZeroCoverage.vcf";
-			copy($vcf, $folder) or die "Copy failed: $!";
+			copy($vcf, $folder) or die "Copy of $sample failed: $!";
 			
 			#Print to report (section3.txt)
 			print ($reportFH "\t@{ $ac2InDefining{$sample}{$type} }");

@@ -9,10 +9,10 @@
 
 
 #where fastq reads are
-export fastqPath="/media/3tb_hdd/data/Mycobaterium_bovis/USDA/"
+export fastqPath=""${HOME}"/Desktop/bru"
 
 #Analysis root directory
-export baseDir=""${HOME}"/analyses/mbovisUSDA_script1" #make variable global (for called scripts)
+export baseDir=""${HOME}"/analyses/brucella_script1_test" #make variable global (for called scripts)
 
 #script dependenties
 export dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -80,7 +80,7 @@ cat "${reports}"/email_processZips.txt \
 if [ $1  ] && [ "$1" = "me" ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
 else
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaea@inspection.gc.ca susan.nadin-davis@inspection.gc.ca"
+    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaea@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
 fi
 
 cat "${reports}"/email_processZips2.txt | mail -s "WGS results" -t "$email_list"

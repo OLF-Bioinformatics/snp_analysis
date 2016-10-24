@@ -86,10 +86,10 @@ END
 
 #Where analysis will take place
 # baseDir=""${HOME}"/analyses/mbovis_script2"
-baseDir=""${HOME}"/analyses/script2v4_test"
+baseDir=""${HOME}"/analyses/B_abortus_script2_test"
 
 #Where the VCF files are
-vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
+vcfPath=""${HOME}"/Desktop/starting_files"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -239,7 +239,13 @@ if [ "$1" = "ab1" ]; then
     DefiningSNPs=""${dependents}"/Brucella_abortus/Abortus1_Defining_SNPs.txt"
     FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
     FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_abortus/FilterFiles" #Files containing positions to filter
+
+    for i in "${dependents}"/Brucella_abortus/FilterFiles/*; do
+        name=$(basename "$i")
+        ln -s "$i" "${filterdir}"/"${name}"
+    done
+
+    # filterdir=""${dependents}"/Brucella_abortus/FilterFiles" #Files containing positions to filter
     
     QUAL=300 # Minimum quality for calling a SNP
     highEnd=350 # QUAL range to change ALT to N
