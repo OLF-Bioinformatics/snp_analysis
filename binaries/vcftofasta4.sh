@@ -86,10 +86,10 @@ END
 
 #Where analysis will take place
 # baseDir=""${HOME}"/analyses/mbovis_script2"
-baseDir=""${HOME}"/analyses/B_abortus_script2_test"
+baseDir=""${HOME}"/analyses/mbovis_ALL_USDA"
 
 #Where the VCF files are
-vcfPath=""${HOME}"/Desktop/starting_files"
+vcfPath="/media/3tb_hdd/db/vcf_source_fixed"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -878,7 +878,6 @@ function filterFilespreparation ()
 # Change SNPs with low QUAL values to N, based on parameter set above in variable settings
 function changeLowCalls ()
 {
-    echo -e "\nChanging low calls, started --> "$(date "+%F %A %H:%M:%S")""
     for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
         base=$(basename "$i")
         baseNoExt="${base%.*}"
@@ -981,7 +980,7 @@ function findpositionstofilter ()
 function fasta_table ()
 {
     # Loop through the directories
-    if [ -n "$eflag" ] || [ -n "$aflag" ] && [ "$1" = ""${baseDir}"/all_vcfs" ]; then
+    if [ "$eflag" -o "$aflag" ] && [ "$1" = ""${baseDir}"/all_vcfs" ]; then
         directories=("$1")
     else
         # directories=($(find ""${baseDir}"/all_subgroups" -maxdepth 1 -type d | awk 'NR > 1'))
@@ -1006,14 +1005,19 @@ function fasta_table ()
 
                 echo -e "\nFiltering positions for "$dName":"
 
+                #counter
+                total=$(find "$d" -maxdepth 1 -type f | grep -F ".vcf" | wc -l)
+                counter=0
+                
                 #Mark vcf allowing areas of the genome to be removed from the SNP analysis
                 for i in $(find "$d" -maxdepth 1 -type f | grep -F ".vcf"); do #don't look at the backed up vcf folder (starting_files)
                     # i=""${d}"/MBWGS083.SNPsZeroCoverage.vcf"
                     m=$(basename "$i")
-                    # n=$(echo "$m" | sed "$dropEXT")
                     n="${m%%.*}"
 
-                    echo -e "Working on "$n"..."
+                    let counter+=1
+
+                    echo -e "Working on "$n"... ("${counter}"/"${total}")"
 
                     #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
                     regionRemover.pl \
@@ -1053,6 +1057,7 @@ function alignTable ()
 {
     d="$1"
     # d=""${baseDir}"/all_groups/Group-9/fasta"
+    # d="/home/bioinfo/analyses/B_abortus_script2_test/all_groups/Group-12/fasta/"
     # d=""${baseDir}"/all_vcfs/fasta"
 
     #Group/Subgroup/Clade name
@@ -1306,55 +1311,58 @@ echo -e "$(cat "${baseDir}"/chroms.txt)"
 
 
 #This is optional
+if [ -f "${baseDir}"/outfile.txt ]; then
 
-for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-    base=$(basename "$i")
-    searchName=$(cut -d "." -f 1 <<< "$base")
-    # echo "Original File: "$base""
-    # echo "searchName: "$searchName""
+    echo -e "\nRenaming files..."
 
-    # Direct script to text file containing a "${baseDir}"/list.txt of the correct labels to use.
-    # The file must be a txt file.
-    if [ -f "${baseDir}"/outfile.txt ]; then
-        p=$(cat "${baseDir}"/outfile.txt | grep "$searchName")
-        echo "This is what was found in tag file: "$p""
-        newName=$(echo "$p" | awk '{print $1}' | tr -d "[:space:]") # Captured the new name
-        n=$(echo "$base" | sed "$tbNumberV" | sed "$tbNumberW")
-        noExtention=$(echo "$base" | sed "$dropEXT")
-        VALtest=$(echo "$i" | grep "VAL")
-        # echo "VALtest: $VALtest"
-        # h=`echo ${i%-AZ}`; g=`echo ${h%-Broad}`; echo $g
+    for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+        base=$(basename "$i")
+        searchName=$(cut -d "." -f 1 <<< "$base")
+        # echo "Original File: "$base""
+        # echo "searchName: "$searchName""
 
-        #Check if a name was found in the tag file.  If no name was found, keep original name, make note in log and cp file to unnamed folder.
-        if [ -z "$p" ]; then # new name was NOT found
-            if [ -z "$VALtest" ]; then
-                name="$searchName"
-                echo "n is "$n""
-                echo "$name" >> "${baseDir}"/section1.txt
-                
-                mkdir -p "${baseDir}"/FilesNotRenamed
-                cp "$i" "${baseDir}"/FilesNotRenamed
-                mv "$i" "${baseDir}"/"${name}".vcf
-                # echo "A"
-            else
-                name="${searchName}"-Val
-                mv "$i" "${baseDir}"/"${name}".vcf
-                # echo "B"
+        # Direct script to text file containing a "${baseDir}"/list.txt of the correct labels to use.
+        # The file must be a txt file.
+        
+            p=$(cat "${baseDir}"/outfile.txt | grep "$searchName")
+            echo "This is what was found in tag file: "$p""
+            newName=$(echo "$p" | awk '{print $1}' | tr -d "[:space:]") # Captured the new name
+            n=$(echo "$base" | sed "$tbNumberV" | sed "$tbNumberW")
+            noExtention=$(echo "$base" | sed "$dropEXT")
+            VALtest=$(echo "$i" | grep "VAL")
+            # echo "VALtest: $VALtest"
+            # h=`echo ${i%-AZ}`; g=`echo ${h%-Broad}`; echo $g
+
+            #Check if a name was found in the tag file.  If no name was found, keep original name, make note in log and cp file to unnamed folder.
+            if [ -z "$p" ]; then # new name was NOT found
+                if [ -z "$VALtest" ]; then
+                    name="$searchName"
+                    echo "n is "$n""
+                    echo "$name" >> "${baseDir}"/section1.txt
+                    
+                    mkdir -p "${baseDir}"/FilesNotRenamed
+                    cp "$i" "${baseDir}"/FilesNotRenamed
+                    mv "$i" "${baseDir}"/"${name}".vcf
+                    # echo "A"
+                else
+                    name="${searchName}"-Val
+                    mv "$i" "${baseDir}"/"${name}".vcf
+                    # echo "B"
+                fi
+            else # New name WAS found
+                if [ -z "$VALtest" ]; then
+                    name="$newName"
+                    mv "$i" "${baseDir}"/"${name}".vcf
+                    # echo "C"
+                else
+                    name="${newName}"-Val
+                    echo "newName is $name"
+                    mv "$i" "${baseDir}"/"${name}".vcf
+                    # echo "D"
+                fi
             fi
-        else # New name WAS found
-            if [ -z "$VALtest" ]; then
-                name="$newName"
-                mv "$i" "${baseDir}"/"${name}".vcf
-                # echo "C"
-            else
-                name="${newName}"-Val
-                echo "newName is $name"
-                mv "$i" "${baseDir}"/"${name}".vcf
-                # echo "D"
-            fi
-        fi
-    fi
-done
+    done
+fi
 
 [ -e "${baseDir}"/outfile.txt ] && rm "${baseDir}"/outfile.txt
 
@@ -1373,6 +1381,9 @@ done
 
 
 #check if file is in dos format
+
+echo -e "\nChecking for dos characters in VCF files..."
+
 isDos=()
 for j in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
     dosLine=$(cat "$j" | grep -IU --color "^M")
@@ -1383,8 +1394,8 @@ wait
 
 #if some files have windows-type carriage returns
 if [ "${#isDos[@]}" -gt 0 ]; then
-    echo "#############################"
-    echo "Making Files Unix Compatiable"
+
+    echo -e "\nMaking files Unix compatiable..."
 
     #Only change those files
     for v in "${isDos[@]}"; do
@@ -1410,17 +1421,20 @@ fi
 # These defining positions must be SNPs found cluster's main branch
 
 #Usage: perl AConeInDefiningSNPs.pl <definingSnps.tsv> <vcfFolder> <section2.txt>
+
+echo -e "\nLooking for AC=1 in Defining SNPs -->  "$(date "+%F %A %H:%M:%S")""
+
 AConeInDefiningSNPs.pl \
     "$DefiningSNPs" \
     "$baseDir" \
     "${baseDir}"/section2.txt
 wait
 
-
-
-
 # Change low QUAL SNPs to N, see set variables
 #gets rid of symbolic links and saves "real" files in "$baseDir"
+
+echo -e "\nChanging ALT allele values based on QUAL -->  "$(date "+%F %A %H:%M:%S")""
+
 changeLowCalls
 wait
 
@@ -1434,7 +1448,18 @@ wait
 
 echo -e "\nChanging AC=1 to IUPAC -->  "$(date "+%F %A %H:%M:%S")""
 
+#counter
+total=$(find -L "$baseDir" -type f | grep -F ".vcf" | wc -l)
+counter=0
+
 for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+    m=$(basename "$i")
+    n="${m%%.*}"
+
+    let counter+=1
+
+    echo -e "Working on "$n"... ("${counter}"/"${total}")"
+
     awk '
 BEGIN { OFS = "\t"}
 
@@ -1467,7 +1492,9 @@ else
 }' "$i" > "${i%vcf}temp"
 
     mv "${i%vcf}temp" "$i"
+
 done
+
 wait
 
 
@@ -1489,12 +1516,17 @@ if [ "$FilterAllVCFs" = "yes" ]; then
     #Label filter field for positions to be filtered in all VCFs
     if [ "$chromCount" -ge 1 ]; then
 
+        #counter
+        counter=0
+
         for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+            let counter+=1
+
             m=$(basename "$i")
             # n=$(echo "$m" | sed "$dropEXT")
             n="${m%%.*}"
 
-            echo -e "Working on "$n"..."
+            echo -e "Working on "$n"... ("${counter}"/"${total}")"
 
             #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
             regionRemover.pl \
@@ -1551,16 +1583,21 @@ done
 #########################################
 
 
-[ -d "${baseDir}"/all_groups ] || mkdir -p "${baseDir}"/all_groups
-mv "${baseDir}"/Group* "${baseDir}"/all_groups
+if [[ $(find "$baseDir" -maxdepth 1 -type d | grep -F "Group") ]]; then
+    [ -d "${baseDir}"/all_groups ] || mkdir -p "${baseDir}"/all_groups
+    mv "${baseDir}"/Group* "${baseDir}"/all_groups
+fi
 
-[ -d "${baseDir}"/all_subgroups ] || mkdir -p "${baseDir}"/all_subgroups
-mv "${baseDir}"/Subgroup*/ "${baseDir}"/all_subgroups/
+if [[ $(find "$baseDir" -maxdepth 1 -type d | grep -F "Subgroup") ]]; then
+    [ -d "${baseDir}"/all_subgroups ] || mkdir -p "${baseDir}"/all_subgroups
+    mv "${baseDir}"/Subgroup* "${baseDir}"/all_subgroups
+fi
 
-[ -d "${baseDir}"/all_clades ] || mkdir -p "${baseDir}"/all_clades
-mv "${baseDir}"/Clade*/ "${baseDir}"/all_clades/
 
-wait
+if [[ $(find "$baseDir" -maxdepth 1 -type d | grep -F "Clade") ]]; then
+    [ -d "${baseDir}"/all_clades ] || mkdir -p "${baseDir}"/all_clades
+    mv "${baseDir}"/Clade* "${baseDir}"/all_clades
+fi
 
 
 ######################
@@ -1571,42 +1608,45 @@ wait
 
 
 #all_vcfs
-if [ -n "$eflag" ] || [ -n "$aflag" ]; then
+if [ "$eflag" -o "$aflag" ]; then #-o means "or". Same as if [ "$eflag" ] || [ "$aflag" ]; then
     echo -e "\nCreating fasta table for all_vcfs --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_vcfs
     wait
 fi
 
 #all_groups
-if [ -n "$(ls -A "${baseDir}"/all_groups)" ]; then
+# if [ -n "$(ls -A "${baseDir}"/all_groups)" ]; then
+if [ -d "${baseDir}"/all_groups ]; then
     echo -e "\nCreating fasta table for all_groups --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_groups
     wait
 else
-    echo "No Groups"
+    echo "No Groups were found"
 fi
 
 #all_subgroups
-if [ -n "$(ls -A "${baseDir}"/all_subgroups)" ]; then
+# if [ -n "$(ls -A "${baseDir}"/all_subgroups)" ]; then
+if [ -d "${baseDir}"/all_subgroups ]; then
     echo -e "\nCreating fasta table for all_subgroups --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_subgroups
     wait
 else
-    echo "No SubGroup"
+    echo "No SubGroup were found"
 fi
 
 #all_clades
-if [ -n "$(ls -A "${baseDir}"/all_clades)" ]; then
+# if [ -n "$(ls -A "${baseDir}"/all_clades)" ]; then
+if [ -d "${baseDir}"/all_clades ]; then
     echo -e "\nCreating fasta table for all_clades --> "$(date "+%F %A %H:%M:%S")""
     fasta_table "${baseDir}"/all_clades
     wait
 else
-    echo "No Clades"
+    echo "No Clades were found"
 fi
 
 
 #Cleanup
-# rm -rf "$filterdir"
+rm -rf "$filterdir"
 
 #For QA, keep a copy of these files to reproduce analysis
 # cp "$DefiningSNPs" "$baseDir"
@@ -1623,7 +1663,7 @@ fi
 
 echo -e "\nOrganizing SNP tables --> "$(date "+%F %A %H:%M:%S")""
 
-if [ -n "$eflag" ] || [ -n "$aflag" ]; then
+if [ "$eflag" -o "$aflag" ]; then
     directories=($(find "$baseDir" -maxdepth 1 -type d \
         | awk 'NR > 1' \
         | grep -v "$uniqdate"))

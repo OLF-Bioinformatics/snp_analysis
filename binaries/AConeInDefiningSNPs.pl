@@ -101,7 +101,7 @@ foreach my $handle (@vcfFilesFH)
         #put VCF line into array
         my @fields = split(/\t/, $line);
         my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $SAMPLE) = @fields[0..9];
-        my $AC = (split(/;/, $INFO))[0];
+        my $AC = (split(/;/, $INFO))[0] or die "No info field in $sampleName at line: $line\n" ;
         
         
         #AC=1 postions which are Defining SNPs
@@ -140,7 +140,8 @@ foreach my $sample (sort keys %ac1InDefining)
     {
         if (@{ $ac1InDefining{$sample}{$chrom} }) #if any
         {
-            print ($reportFH "AC=1 found in defining SNPs for $sample in chromosome $chrom at position(s): join(", ", @{ $ac1InDefining{$sample}{$chrom} }).\n");
+        	my $pos = join(", ", @{ $ac1InDefining{$sample}{$chrom} });
+            print ($reportFH "AC=1 found in defining SNPs for $sample in chromosome $chrom at position(s): $pos.\n");
         }
     }
 }

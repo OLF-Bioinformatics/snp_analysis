@@ -294,6 +294,7 @@ close($countOutFH);
 #               #
 #################
 
+
 my %posList;
 foreach my $chrom ( sort keys %{ $fastas{$s} } )
 {

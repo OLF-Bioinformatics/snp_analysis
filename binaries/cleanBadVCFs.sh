@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #convert to Unix
 #remove trailing tabs (whitespaces)
 # cat "$i" | sed -e 's/[[:space:]]*$//'
@@ -17,7 +19,3 @@ for i in *.vcf; do
     cat "$i" | grep -vE "^#" | tr -d "\"" >> "${i}".tmp
     mv "${i}".tmp "$i"
 done
-
-
-
-
