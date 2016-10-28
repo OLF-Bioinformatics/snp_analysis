@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+'''
+Created on Oct 27, 2016
+
+@author: Marc-Oliver Duceppe
+'''
+
 import pandas as pd
 from sys import argv
 
@@ -29,31 +35,28 @@ row_num = mytable.shape[0]
 # Counting the number of SNPs/position and group
 # Iterate through each column of table
 # If sample call is equal to reference call (cell [0,x]), count finding
-# Place sum in new row for each column
-count=0
-# Get a column number
-for each_column in range(1,col_num):
-    # Iterate each cell in column
-    for each_cell in mytable.ix[0:,each_column]:
-        if each_cell == mytable.ix[0,each_column]:
-            count += 1
-    mytable.ix[row_num + 1,each_column] = count
-    #mytable.ix[1, 1]="myvalue"
-    count=0
+# Place sum (countA) in new row for each column
+# Also count (countB) distance SNP accures from reference call
 
-# Iterate through each column of table
-# Count distance SNP accures from reference call
-count=0
+
 # Get a column number
 for each_column in range(1,col_num):
+    countA=0
+    countB=0
+    breakFlag=0
+    
     # Iterate each cell in column
     for each_cell in mytable.ix[0:,each_column]:
         if each_cell == mytable.ix[0,each_column]:
-            count += 1
+            countA += 1
+            if breakFlag == 0:
+                countB += 1
         else:
-            mytable.ix[row_num + 2,each_column] = count
-            count=0
-            break
+            if breakFlag == 0:
+                breakFlag = 1
+                mytable.ix[row_num + 2,each_column] = countB
+
+    mytable.ix[row_num + 1,each_column] = countA
 
 mytrans = mytable.transpose()
 col_num = mytrans.shape[1]

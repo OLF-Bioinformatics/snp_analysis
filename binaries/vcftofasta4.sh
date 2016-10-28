@@ -1008,7 +1008,7 @@ function fasta_table ()
                 #counter
                 total=$(find "$d" -maxdepth 1 -type f | grep -F ".vcf" | wc -l)
                 counter=0
-                
+
                 #Mark vcf allowing areas of the genome to be removed from the SNP analysis
                 for i in $(find "$d" -maxdepth 1 -type f | grep -F ".vcf"); do #don't look at the backed up vcf folder (starting_files)
                     # i=""${d}"/MBWGS083.SNPsZeroCoverage.vcf"
@@ -1116,6 +1116,9 @@ function alignTable ()
     #                         "${d}"/"${dName}"-tree.svg \
     
     # reroot tree
+
+    echo -e "Rerooting tree..."
+
     nw_reroot \
         "${d}"/RAxML_bestTree."$dName" \
         root \
@@ -1148,6 +1151,8 @@ function alignTable ()
     mv "${d}"/cleanedAlignment.txt{.temp,}
     wait
 
+    echo "Sorting and organizing SNP table..."
+
     #Sort and organize SNP table
     sortOrganizeTable.py \
         "${parent}"/"${dName}".table.txt \
@@ -1160,9 +1165,7 @@ function alignTable ()
     mv "${d}"/"${dName}".organized_table.txt "${d}"/"${dName}".sorted_table.txt
 
 
-
     # Add map qualities to sorted table
-    echo "Adding map qualities..."
 
     # Get just the position from first line.  The chromosome must be removed
     cat "${d}"/"${dName}".sorted_table.txt \
@@ -1173,7 +1176,7 @@ function alignTable ()
         > "${d}"/"${dName}"-positions.txt
 
 
-    echo -e "Sorting mapping quality table..."
+    echo -e "Extracting quality values from VCF files..."
 
     #Usage: perl qualityExtractor.pl <position.txt> <vcf_folder> <quality.txt>
     qualityExtractor.pl \
@@ -1182,21 +1185,8 @@ function alignTable ()
         "${d}"/quality.txt
     wait
 
-    mapvalues.py \
-        "${d}"/"${dName}".sorted_table.txt \
-        "${d}"/quality.txt \
-        "${d}"/"${dName}".transposed_table.txt \
-        "${d}"/"${dName}".finished_table.txt
-    wait
+    echo "Adding map quality values to SNP table..."
 
-    #Overwrite the old table
-    mv "${d}"/"${dName}".finished_table.txt "${d}"/"${dName}".sorted_table.txt
-
-
-
-    echo "Organizing mappping quality table..."
-
-    #run python script
     mapvalues.py \
         "${d}"/"${dName}".sorted_table.txt \
         "${d}"/quality.txt \
@@ -1343,22 +1333,18 @@ if [ -f "${baseDir}"/outfile.txt ]; then
                     mkdir -p "${baseDir}"/FilesNotRenamed
                     cp "$i" "${baseDir}"/FilesNotRenamed
                     mv "$i" "${baseDir}"/"${name}".vcf
-                    # echo "A"
                 else
                     name="${searchName}"-Val
                     mv "$i" "${baseDir}"/"${name}".vcf
-                    # echo "B"
                 fi
             else # New name WAS found
                 if [ -z "$VALtest" ]; then
                     name="$newName"
                     mv "$i" "${baseDir}"/"${name}".vcf
-                    # echo "C"
                 else
                     name="${newName}"-Val
                     echo "newName is $name"
                     mv "$i" "${baseDir}"/"${name}".vcf
-                    # echo "D"
                 fi
             fi
     done
@@ -1407,6 +1393,8 @@ if [ "${#isDos[@]}" -gt 0 ]; then
         mv "${baseDir}"/"${v}".temp "${baseDir}"/"$v"
     done
 fi
+
+wait
 
 
 ###############################
@@ -1492,7 +1480,6 @@ else
 }' "$i" > "${i%vcf}temp"
 
     mv "${i%vcf}temp" "$i"
-
 done
 
 wait
@@ -1547,7 +1534,7 @@ if [ "$FilterAllVCFs" = "yes" ]; then
     wait
 
 else
-    echo "***VCF filtering not done. FilterAllVCFs was set to \"no\"." | tee -a "${baseDir}"/section5.txt
+    echo "VCF filtering not done. FilterAllVCFs was set to \"no\"." | tee -a "${baseDir}"/section5.txt
 fi
 
 
@@ -1643,10 +1630,6 @@ if [ -d "${baseDir}"/all_clades ]; then
 else
     echo "No Clades were found"
 fi
-
-
-#Cleanup
-rm -rf "$filterdir"
 
 #For QA, keep a copy of these files to reproduce analysis
 # cp "$DefiningSNPs" "$baseDir"
@@ -1778,13 +1761,13 @@ echo -e "\n****************************************************\n" >> "${baseDir
 
 echo "<p> These files did not get renamed: </p>" >> "${baseDir}"/email_log.html
 [ -f "${baseDir}"/csection1.txt ] && cat "${baseDir}"/csection1.txt \
-    | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>" "$i""</td>";print "</tr>"} END{print "</table>"}' \
+    | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>"$i"</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
 echo "<p> Possible Mixed Isolates, Defining SNPs called AC=1 </p>" >> "${baseDir}"/email_log.html
 cat "${baseDir}"/section2.txt \
-    | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>" "$i""</td>";print "</tr>"} END{print "</table>"}' \
+    | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>"$i"</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
 echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
 
