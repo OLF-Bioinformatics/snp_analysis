@@ -86,10 +86,12 @@ END
 
 #Where analysis will take place
 # baseDir=""${HOME}"/analyses/mbovis_script2"
-baseDir=""${HOME}"/analyses/mbovis_ALL_USDA"
+baseDir=""${HOME}"/analyses/mbovis_16_23"
+# baseDir=""${HOME}"/analyses/script2_test"
 
 #Where the VCF files are
-vcfPath="/media/3tb_hdd/db/vcf_source_fixed"
+vcfPath="/home/bioinfo/Desktop/group23_16"
+# vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -155,8 +157,6 @@ dropEXT="s/\(.*\)\..*/\1/" #Just drop the extention from the file
 #                        #
 ##########################
 
-
-echo -e "****************************** START ******************************\n"
 
 echo "Start Time: "$(date "+%F %A %H:%M:%S")"" | tee "${baseDir}"/sectiontime.txt
 starttime=$(date +%s)
@@ -799,38 +799,43 @@ function removeIsolates ()
 # The regular expression used in sed should be changed based on vcf naming convention
 function testDuplicates ()
 {
-    echo -e "\nChecking for empty or duplicated VCF files."
+    echo -e "\nChecking input VCF files..."
 
-    directorytest="${baseDir##*/}" #name of directory where script was launched (or name of "$baseDir")
-    if [ "$directorytest" = "VCF_Source_All" ]; then # if where all the reference vcf files are stored
+    if [ $(basename "$baseDir") = "VCF_Source_All" ]; then # if where all the reference vcf files are stored
         echo "Change directory name and restart"
         exit 1
     fi
 
-    for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+    #check if any VCF files is present in starting directory
+    nVCF=$(find -L "$baseDir" -maxdepth 1 -type f -name "*.vcf" | wc -l)
+    if [ "$nVCF" -gt 0 ]; then
+        echo ""$nVCF" VCF files were submitted"
+    else #if [ "$nVCF" -eq 0 ]
+        echo "No VCF files were found"
+        exit 1
+    fi
+
+    #Check if VCF files are empty and if duplicate entries
+    declare -A sampleList=()
+
+    for i in $(find -L "$baseDir" -maxdepth 1 -type f -name "*.vcf"); do
         if [ ! -s "$i" ]; then
-            echo ""$i" is empty.  Fix and restart script"
-            # exit 1
+            echo ""$i" is empty. Fix and restart script"
+            exit 1
         fi
 
-        getbase=$(basename "$i")
-        number=$(echo "$getbase" | sed "$tbNumberV" | sed "$tbNumberW")
-        echo "$number" >> "${baseDir}"/list.txt
+        name=$(basename "$i")
+        sample=$(cut -d "." -f 1 <<< "$name")
+
+        if [ "${sampleList["$sample"]+1}" ]; then
+            echo ""$name" is duplicated"
+            exit 1
+        else
+            sampleList+=(["$sample"]=)
+        fi
     done
 
-    duplist=$(cat "${baseDir}"/list.txt | sort | uniq -d)
-    dupNumberSize=$(echo "$duplist" | wc | awk '{print $3}')
-
-    rm "${baseDir}"/list.txt
-
-    if [ "$dupNumberSize" -gt 4 ]; then
-        echo "There are duplicated VCF files."
-        echo "Please remove the duplicates and restart script."
-        echo "$duplist"
-        exit 1 # Error status
-    else
-        echo "Good! No duplicated VCF files present"
-    fi
+    echo "No duplicated VCF files found"
 }
 
 
@@ -1035,6 +1040,8 @@ function fasta_table ()
 
         echo ""${dName}":" >> "${baseDir}"/section4.txt
 
+        # d=""${baseDir}"/all_vcfs"
+
         #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
         snpTableMaker.pl \
             "$genome" \
@@ -1046,6 +1053,16 @@ function fasta_table ()
             "${d}"/fasta \
             "${d}"/"${dName}".table.txt #> "${baseDir}"/"${dName}"_outputPostions.txt
         wait
+
+        #target the samples that have too many AC=1 also found in AC=2 (more than 20)
+        echo -e "Sample\tAC1_in_AC2" > "${d}"/"${dName}"_maybeMixed.txt
+
+        # 10-5850
+        # AC=1 is also found in AC=2 in chromosome AF2122_NC002945 at position(s): 1412857, 1413979, 2016466, 2016483, 2016491
+        #count number of commas and get previous line if 20 or more.
+        cat "${d}"/"${dName}"_AC1Report.txt \
+            | awk -F ',' 'NF-1 > 20 {print f,"\t",NF-1} {f=$1}' \
+            >> "${d}"/"${dName}"_maybeMixed.txt
 
         # Make a file containing all fasta files. Used awk instead of cat to insure newline between files
         cat "${d}"/fasta/*.fas > "${d}"/"${dName}"_alignment.fasta
@@ -1510,7 +1527,6 @@ if [ "$FilterAllVCFs" = "yes" ]; then
             let counter+=1
 
             m=$(basename "$i")
-            # n=$(echo "$m" | sed "$dropEXT")
             n="${m%%.*}"
 
             echo -e "Working on "$n"... ("${counter}"/"${total}")"
@@ -1817,6 +1833,3 @@ fi
 
 #Cleanup
 # rm "${baseDir}"/email_log.html
-
-#Closing comment
-echo -e "\n****************************** END ******************************\n"

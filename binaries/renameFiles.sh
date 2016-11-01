@@ -17,7 +17,7 @@
 # folder="$1"
 # conversionTable="$2"
 
-folder=/media/bioinfo/Olga\ -\ NGS/Olga_vcf_mbovisCAN
+folder="/media/bioinfo/SANDISK128/olga/mbovis_16_23"
 conversionTable="/media/3tb_hdd/data/Mycobaterium_bovis/TB_tree_transtate_fuller.txt"
 
 ###### CHECKS ######
@@ -111,7 +111,7 @@ find "$folder" -type f | while read i; do
                 # exit 1
             fi
 
-            # echo ""$i" -> "$fullNewName""
+            echo ""$i" -> "$fullNewName""
             mv "$i" "$fullNewName"
             wait
         fi

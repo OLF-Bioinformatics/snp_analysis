@@ -21,8 +21,12 @@
 # folder=$(readlink -e "$1") 
 # conversionTable=$(readlink -e "$2")
 
-folder="$1"
-conversionTable="$2"
+# folder="$1"
+# conversionTable="$2"
+
+
+folder="/media/bioinfo/SANDISK128/olga/mbovis_16_23"
+conversionTable="/media/3tb_hdd/data/Mycobaterium_bovis/TB_tree_transtate_fuller.txt"
 
 
 ###### CHECKS ######
@@ -69,8 +73,10 @@ fi
 
 
 #The text replacing loop
+#To change names in SNP table
 # for i in $(find "$folder" -type f); do #doesn't work when path/file names have spaces
-find "$folder" -type f | grep -F "organizedTable" | while read i; do
+find "$folder" -type f | grep -F "organized_table" | while read i; do
+    echo "Renaming "$i""
     awk 'NR==FNR {a[$1]=$2;next} {for ( i in a) gsub(i,a[i])}1' "$conversionTable" "$i" > "${i}".renamed
     mv  "${i}".renamed "$i"
 done
