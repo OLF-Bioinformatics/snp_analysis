@@ -6,7 +6,6 @@ use diagnostics;
 use Array::Utils qw(:all);
 use Bio::SeqIO;
 use Parallel::ForkManager;
-use Parallel::Loops;
 use Sys::CPU;
 use Data::Dumper qw(Dumper);
 

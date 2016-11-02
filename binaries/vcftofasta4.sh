@@ -85,13 +85,13 @@ END
 
 
 #Where analysis will take place
-# baseDir=""${HOME}"/analyses/mbovis_script2"
-baseDir=""${HOME}"/analyses/mbovis_16_23"
+baseDir=""${HOME}"/analyses/mbovis_script2"
+# baseDir=""${HOME}"/analyses/mbovis_16_23"
 # baseDir=""${HOME}"/analyses/script2_test"
 
 #Where the VCF files are
-vcfPath="/home/bioinfo/Desktop/group23_16"
-# vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
+# vcfPath="/home/bioinfo/Desktop/group23_16"
+vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -1043,7 +1043,8 @@ function fasta_table ()
         # d=""${baseDir}"/all_vcfs"
 
         #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
-        snpTableMaker.pl \
+        # snpTableMaker.pl \
+        snpTableMakerFM.pl \
             "$genome" \
             "$d" \
             "$QUAL" \
@@ -1171,11 +1172,16 @@ function alignTable ()
     echo "Sorting and organizing SNP table..."
 
     #Sort and organize SNP table
-    sortOrganizeTable.py \
+    snpTableSorter.pl \
         "${parent}"/"${dName}".table.txt \
         "${d}"/cleanedAlignment.txt \
-        "${d}"/"${dName}".sorted_table.txt \
         "${d}"/"${dName}".organized_table.txt
+
+    # sortOrganizeTable.py \
+    #     "${parent}"/"${dName}".table.txt \
+    #     "${d}"/cleanedAlignment.txt \
+    #     "${d}"/"${dName}".sorted_table.txt \
+    #     "${d}"/"${dName}".organized_table.txt
     wait
 
     #replace sorted table
