@@ -85,12 +85,9 @@ END
 
 
 #Where analysis will take place
-baseDir=""${HOME}"/analyses/mbovis_script2"
-# baseDir=""${HOME}"/analyses/mbovis_16_23"
-# baseDir=""${HOME}"/analyses/script2_test"
+baseDir=""${HOME}"/analyses/mbovis_script2_test"
 
 #Where the VCF files are
-# vcfPath="/home/bioinfo/Desktop/group23_16"
 vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
@@ -171,10 +168,8 @@ argUsed="$1"
 
 
 #populate baseDir folder (symbolic links)
-for i in $(find "$vcfPath" -type f | grep -F "SNPsZeroCoverage.vcf"); do
-    name=$(basename "$i")
-    ln -s "$i" "${baseDir}"/"$name"
-done
+find "$vcfPath" -type f | grep -F "SNPsZeroCoverage.vcf" \
+    | parallel "ln -s {} "${baseDir}"/{/}"  # {/} means basename in parallel -> https://www.gnu.org/software/parallel/man.html
 
 
 #################
@@ -881,20 +876,59 @@ function filterFilespreparation ()
 #################################################################################
 
 # Change SNPs with low QUAL values to N, based on parameter set above in variable settings
-function changeLowCalls ()
+function changeLowQUAL ()
 {
-    for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-        base=$(basename "$i")
-        baseNoExt="${base%.*}"
+    find -L "$baseDir" -type f | grep -F ".vcf" \
+        | parallel 'awk -v x="$QUAL" -v y="$highEnd" '"'"'BEGIN {OFS="\t"} { if ($6 >= x && $6 <= y) print $1, $2, $3, $4, "N", $6, $7, $8, $9, $10; else print $0 }'"'"' {} > {.}.tmp'
 
-        cat "$i" \
-            | awk -v x="$QUAL" -v y="$highEnd" 'BEGIN {OFS="\t"} { if ($6 >= x && $6 <= y) print $1, $2, $3, $4, "N", $6, $7, $8, $9, $10; else print $0 }' \
-            > "${baseDir}"/"${baseNoExt}".txt
-
-        rm "$i"
-        mv "${baseDir}"/"${baseNoExt}".txt "${baseDir}"/"${baseNoExt}".vcf
-    done
+    #rename files
+    find "$baseDir" -type f | grep -F ".tmp" \
+        | parallel 'mv {} {.}.vcf'
 }
+
+
+#################################################################################
+
+function changeToIUPAC ()
+{
+    find -L "$baseDir" -type f | grep -F ".vcf" \
+        | parallel \
+        'awk '"'"'
+BEGIN { OFS = "\t"}
+
+{ if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /AG/ )
+         print $1, $2, $3, $4, "R", $6, $7, $8, $9, $10
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /CT/ )
+         print $1, $2, $3, $4, "Y", $6, $7, $8, $9, $10
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /GC/ )
+         print $1, $2, $3, $4, "S", $6, $7, $8, $9, $10
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /AT/ )
+         print $1, $2, $3, $4, "W", $6, $7, $8, $9, $10
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /GT/ )
+         print $1, $2, $3, $4, "K", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /AC/ )
+         print $1, $2, $3, $4, "M", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /GA/ )
+         print $1, $2, $3, $4, "R", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /TC/ )
+         print $1, $2, $3, $4, "Y", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /CG/ )
+         print $1, $2, $3, $4, "S", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /TA/ )
+         print $1, $2, $3, $4, "W", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /TG/ )
+         print $1, $2, $3, $4, "K", $6, $7, $8, $9, $10         
+else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /CA/ )
+         print $1, $2, $3, $4, "M", $6, $7, $8, $9, $10         
+else
+    print $0     
+}'"'"' {} > {.}.tmp'
+
+    #rename files
+    find "$baseDir" -type f | grep -F ".tmp" \
+        | parallel 'mv {} {.}.vcf'
+}
+
 
 #################################################################################
 
@@ -984,6 +1018,7 @@ function findpositionstofilter ()
 #   Function: fasta and table creation
 function fasta_table ()
 {
+    unset directories
     # Loop through the directories
     if [ "$eflag" -o "$aflag" ] && [ "$1" = ""${baseDir}"/all_vcfs" ]; then
         directories=("$1")
@@ -1004,37 +1039,55 @@ function fasta_table ()
         [ -d "${d}"/starting_files ] || mkdir "${d}"/starting_files
         cp "${d}"/*.vcf "${d}"/starting_files
 
+        echo -e "\nFiltering positions for "$dName":"
+
         if [ "$d" != ""${baseDir}"/all_vcfs" ]; then #skip is in all_vcfs folder, the filtering has been done already
             #Filterout group/subgroup/clade specific positions
             if [ "$FilterGroups" = "yes" ]; then
 
-                echo -e "\nFiltering positions for "$dName":"
+                find -L "$d" -type f | grep -F ".vcf" \
+                    | parallel "regionRemover.pl \
+                                    "${filterdir}/"${dName}".txt" \
+                                    "${baseDir}"/chroms.txt \
+                                    {} \
+                                    {}.filtered"
 
-                #counter
-                total=$(find "$d" -maxdepth 1 -type f | grep -F ".vcf" | wc -l)
-                counter=0
+                #rename files
+                # for i in $(find "$d" -type f | grep -F ".vcf.filtered"); do
+                #     # echo ""$i" -> "${i%.*}""
+                #     mv "$i" "${i%.*}" #overwrites the pre-filtered file
+                # done
 
-                #Mark vcf allowing areas of the genome to be removed from the SNP analysis
-                for i in $(find "$d" -maxdepth 1 -type f | grep -F ".vcf"); do #don't look at the backed up vcf folder (starting_files)
-                    # i=""${d}"/MBWGS083.SNPsZeroCoverage.vcf"
-                    m=$(basename "$i")
-                    n="${m%%.*}"
+                find "$d" -type f | grep -F ".vcf.filtered" \
+                    | parallel "mv {} {.}"
 
-                    let counter+=1
+                
 
-                    echo -e "Working on "$n"... ("${counter}"/"${total}")"
+                # #counter
+                # total=$(find "$d" -maxdepth 1 -type f | grep -F ".vcf" | wc -l)
+                # counter=0
 
-                    #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
-                    regionRemover.pl \
-                        "${filterdir}/FilterToAll.txt" \
-                        "${baseDir}"/chroms.txt \
-                        "$i" \
-                        "${i}".filtered
-                    wait
+                # #Mark vcf allowing areas of the genome to be removed from the SNP analysis
+                # for i in $(find "$d" -maxdepth 1 -type f | grep -F ".vcf"); do #don't look at the backed up vcf folder (starting_files)
+                #     # i=""${d}"/MBWGS083.SNPsZeroCoverage.vcf"
+                #     m=$(basename "$i")
+                #     n="${m%%.*}"
 
-                    #Replace original vcf by the filtered one
-                    mv "${i}".filtered "$i"
-                done
+                #     let counter+=1
+
+                #     echo -e "Working on "$n"... ("${counter}"/"${total}")"
+
+                #     #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
+                #     regionRemover.pl \
+                #         "${filterdir}/FilterToAll.txt" \
+                #         "${baseDir}"/chroms.txt \
+                #         "$i" \
+                #         "${i}".filtered
+                #     wait
+
+                #     #Replace original vcf by the filtered one
+                #     mv "${i}".filtered "$i"
+                # done
             fi
         fi
 
@@ -1043,8 +1096,7 @@ function fasta_table ()
         # d=""${baseDir}"/all_vcfs"
 
         #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
-        # snpTableMaker.pl \
-        snpTableMakerFM.pl \
+        snpTableMaker.pl \
             "$genome" \
             "$d" \
             "$QUAL" \
@@ -1290,21 +1342,16 @@ wait
 
 
 # Count the number of chromosomes used in the reference when VCFs were made.
-#singleFile=`ls *.vcf | head -1`
-echo -e "\nCounting the number of chromosomes in first 100 samples, started -->  "$(date "+%F %A %H:%M:%S")""
-chromCount=$(cat $(find -L "$baseDir" -type f | grep -F ".vcf" | head -100) \
-                | awk ' $0 !~ /^#/ {print $1}' \
-                | sort | uniq -d \
-                | awk 'END {print NR}')
 
-echo "The number of chromosomes/segments seen in VCF files: "$chromCount""
-cat $(find -L "$baseDir" -type f | grep -F ".vcf" | head -100) \
-    | awk ' $0 !~ /^#/ {print $1}' \
-    | sort | uniq -d \
-    > "${baseDir}"/chroms.txt
+echo -e "\nFinding chromosomes, started -->  "$(date "+%F %A %H:%M:%S")""
+
+find -L "$baseDir" -type f | grep -F ".vcf" \
+    | parallel "cat {} | grep -vE "^#" | cut -f 1 | sort | uniq -d >> /dev/stdout" \
+    | sort | uniq -d > "${baseDir}"/chroms.txt
 
 #Chromosomes/segments found
-echo -e "$(cat "${baseDir}"/chroms.txt)"
+chromCount=$(cat "${baseDir}"/chroms.txt | wc -l)
+echo -e "Found "$chromCount" chromosome(s):\n$(cat "${baseDir}"/chroms.txt)"
 
 
 #################################################################################
@@ -1395,9 +1442,11 @@ echo -e "\nChecking for dos characters in VCF files..."
 
 isDos=()
 for j in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-    dosLine=$(cat "$j" | grep -IU --color "^M")
-    # [ -n "$dosLine" ] && isDos+=("$j")
+    dosLine=$(cat "$j" | grep -IU --color "^M") #count caracters only founf in Windows files
+    [ -n "$dosLine" ] && isDos+=("$j") #if found put in array
 done
+
+# echo "${#isDos[@]}"
 
 wait
 
@@ -1435,7 +1484,7 @@ wait
 
 echo -e "\nLooking for AC=1 in Defining SNPs -->  "$(date "+%F %A %H:%M:%S")""
 
-AConeInDefiningSNPs.pl \
+AConeInDefiningSNPsFM.pl \
     "$DefiningSNPs" \
     "$baseDir" \
     "${baseDir}"/section2.txt
@@ -1446,7 +1495,7 @@ wait
 
 echo -e "\nChanging ALT allele values based on QUAL -->  "$(date "+%F %A %H:%M:%S")""
 
-changeLowCalls
+changeLowQUAL
 wait
 
 
@@ -1459,66 +1508,18 @@ wait
 
 echo -e "\nChanging AC=1 to IUPAC -->  "$(date "+%F %A %H:%M:%S")""
 
-#counter
-total=$(find -L "$baseDir" -type f | grep -F ".vcf" | wc -l)
-counter=0
-
-for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-    m=$(basename "$i")
-    n="${m%%.*}"
-
-    let counter+=1
-
-    echo -e "Working on "$n"... ("${counter}"/"${total}")"
-
-    awk '
-BEGIN { OFS = "\t"}
-
-{ if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /AG/ )
-         print $1, $2, $3, $4, "R", $6, $7, $8, $9, $10
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /CT/ )
-         print $1, $2, $3, $4, "Y", $6, $7, $8, $9, $10
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /GC/ )
-         print $1, $2, $3, $4, "S", $6, $7, $8, $9, $10
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /AT/ )
-         print $1, $2, $3, $4, "W", $6, $7, $8, $9, $10
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /GT/ )
-         print $1, $2, $3, $4, "K", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /AC/ )
-         print $1, $2, $3, $4, "M", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /GA/ )
-         print $1, $2, $3, $4, "R", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /TC/ )
-         print $1, $2, $3, $4, "Y", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /CG/ )
-         print $1, $2, $3, $4, "S", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /TA/ )
-         print $1, $2, $3, $4, "W", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /TG/ )
-         print $1, $2, $3, $4, "K", $6, $7, $8, $9, $10         
-else if ($6 > 300 && $8 ~ /^AC=1;/ && $4$5 ~ /CA/ )
-         print $1, $2, $3, $4, "M", $6, $7, $8, $9, $10         
-else
-    print $0     
-}' "$i" > "${i%vcf}temp"
-
-    mv "${i%vcf}temp" "$i"
-done
-
+changeToIUPAC
 wait
 
 
-############################################
-#                                          #
-#    Mark files / Remove marked regions    #
-#                                          #
-############################################
+##############################
+#                            #
+#    Filter bad positions    #
+#                            #
+##############################
 
 
 #Remove positions with missing genotypes and the ones to from the filter file
-
-echo "Number of chromosomes:  "$chromCount""
-
 if [ "$FilterAllVCFs" = "yes" ]; then
 
     echo -e "\nFiltering out positions from FilterToAll.txt --> "$(date "+%F %A %H:%M:%S")""
@@ -1526,29 +1527,17 @@ if [ "$FilterAllVCFs" = "yes" ]; then
     #Label filter field for positions to be filtered in all VCFs
     if [ "$chromCount" -ge 1 ]; then
 
-        #counter
-        counter=0
+        find -L "$baseDir" -type f | grep -F ".vcf" \
+            | parallel "regionRemover.pl \
+                            "${filterdir}/FilterToAll.txt" \
+                            "${baseDir}"/chroms.txt \
+                            {} \
+                            {}.filtered"
 
-        for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-            let counter+=1
+        #rename files
+        find "$baseDir" -type f | grep -F ".vcf.filtered" \
+            | parallel 'mv {} {.}'
 
-            m=$(basename "$i")
-            n="${m%%.*}"
-
-            echo -e "Working on "$n"... ("${counter}"/"${total}")"
-
-            #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
-            regionRemover.pl \
-                "${filterdir}/FilterToAll.txt" \
-                "${baseDir}"/chroms.txt \
-                "$i" \
-                "${i}".filtered
-            wait
-
-            #Replace original vcf by the filtered one
-            mv "${i}".filtered "$i"
-            wait
-        done
     else
         echo "No chromosome detected."
         exit 1
@@ -1572,7 +1561,7 @@ fi
 echo -e "\nFind groups using DefiningSNP positions --> "$(date "+%F %A %H:%M:%S")""
 
 #Usage: perl AConeInDefiningSNPs.pl <definingSnps.tsv> <vcfFolder> <section2.txt>
-groupFinder.pl \
+groupFinderFM.pl \
     "$DefiningSNPs" \
     "$baseDir" \
     "${baseDir}"/section3.txt \
@@ -1580,6 +1569,10 @@ groupFinder.pl \
 
 
 [ -d "${baseDir}"/all_vcfs ] || mkdir -p "${baseDir}"/all_vcfs #Make all_vcfs folder if one does not exist.
+
+# find -L "$baseDir" -maxdepth 1 -type f | grep -F ".vcf" |
+#     parallel "mv {} "${baseDir}"/all_vcfs"
+
 for i in $(find -L "$baseDir" -maxdepth 1 -type f | grep -F ".vcf"); do
     mv "$i" "${baseDir}"/all_vcfs
 done

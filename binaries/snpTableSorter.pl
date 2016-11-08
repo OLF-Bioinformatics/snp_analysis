@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 use diagnostics;
-use List::MoreUtils qw(firstidx);
-use Data::Dumper qw(Dumper);
+#use List::MoreUtils qw(firstidx);
+#use Data::Dumper qw(Dumper);
 
 
 #I/O
@@ -27,6 +27,8 @@ if (scalar(@ARGV) != 3)
 #                      #
 ########################
 
+
+print "Parsing table...\n";
 
 #open table.txt
 open(my $tableFH, '<', $tableIN) or die "Can't read $tableIN: $!\n";
@@ -59,6 +61,7 @@ while (my $line = <$tableFH>)
 #                                 #
 ###################################
 
+print "Counting number of REF allele for each SNP position...\n";
 
 my %countPos;
 #my %countSam; #Commented because order comes from the RAxML output
@@ -79,6 +82,8 @@ foreach my $sample(sort keys %table)
 
 #print Dumper \%counts;
 
+print "Reordering positions based on REF allele counts...\n";
+
 #Order positions based on REF allele counts and save to array
 my @orderedPos;
 foreach my $pos (sort { $countPos{$a} <=> $countPos{$b} } keys %countPos)
@@ -98,7 +103,7 @@ foreach my $pos (sort { $countPos{$a} <=> $countPos{$b} } keys %countPos)
 #	push(@orderedSam, $pos); #position names
 #}
 
-
+print "Reordering samples based on RAxML tree...\n";
 
 #open cleanedAlignment.txt
 open(my $samFH, '<', $sampleOrderIN) or die "Can't read $sampleOrderIN: $!\n";
@@ -122,6 +127,8 @@ while (my $line = <$samFH>)
 #my $index = firstidx { $_ eq "reference_call" } @orderedSam; #find it's index
 #splice(@orderedSam, $index, 1); #Remove "reference_call" from array
 #unshift(@orderedSam, "reference_call"); #Add back "reference_call" at the beginning of the array
+
+print "Refining SNP position order to increase table readability...\n";
 
 #refine position sorting by determining the row number of the first ALT allele
 my %rank;
@@ -161,6 +168,8 @@ foreach my $pos (sort { $rank{$a} <=> $rank{$b} || $countPos{$a} <=> $countPos{$
 ###########################
 
 
+print "Writing sorted table to file...\n";
+
 #Write to file
 open(my $tmpFH, '>', $organizedOUT) or die "Could not write to $organizedOUT: $!\n";
 
@@ -181,3 +190,5 @@ foreach my $sample (@orderedSam)
 	}
 	print { $tmpFH } ("\n");
 }
+
+

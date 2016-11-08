@@ -74,7 +74,7 @@ foreach my $file (@vcfFiles)
 	push(@vcfFilesFH, $fh);
 }
 
-#process every VCF file in a row and store content in array
+#process every VCF file in a row and store content in hash
 my  %ac2InDefining;
 
 foreach my $handle (@vcfFilesFH)

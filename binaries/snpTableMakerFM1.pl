@@ -8,6 +8,16 @@ use Bio::SeqIO;
 use Parallel::ForkManager;
 use Sys::CPU;
 use Data::Dumper qw(Dumper);
+use Sys::MemInfo qw(totalmem freemem totalswap); #http://search.cpan.org/~scresto/Sys-MemInfo-0.99/MemInfo.pm
+use List::Util qw(min);
+
+
+#################
+#               #
+#   Arguments   #
+#               #
+#################
+
 
 #I/O files
 my $genomeFile = $ARGV[0];
@@ -18,6 +28,7 @@ my $ac1Out = $ARGV[4];
 my $countOut = $ARGV[5];
 my $fastaOutFolder = $ARGV[6];
 my $fastaTable = $ARGV[7];
+
 
 #Check if 7 arguments
 if (scalar(@ARGV) != 8)
@@ -66,17 +77,41 @@ foreach my $file (@vcfFiles)
     push(@vcfFilesFH, $fh);
 }
 
-#AC=1 report
-open(my $ac1OutFH, ">", $ac1Out) or die "Error writing to output file $ac1Out: $!\n";
-
 #Need hashes in case multiple chromosomes
 my %vcfs;
 my %AC1;
 my %AC2;
 
+#setting up the forking process
+my $nCPU = Sys::CPU::cpu_count();
+my $maxProcessCPU = $nCPU;
+
+#Memory in bytes
+my $nVCF = $#vcfFilesFH;
+my $requiredMEM = (1024**2) * 30 * $nVCF; #30MB per VCF in byte; ** => exponent
+my $memFree = Sys::MemInfo::freemem(); #in byte
+my $maxProcessMEM = int($memFree / $requiredMEM);
+
+# get the min between cpu and memory slot
+my $maxProcess = min($maxProcessCPU, $maxProcessMEM);
+
+# my $pm1 = Parallel::ForkManager -> new($maxProcess);
+my $pm1 = Parallel::ForkManager -> new($nCPU);
+
+$pm1->run_on_finish(sub {
+    my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
+
+    %vcfs = (%vcfs, %{ $data_structure_reference->{vcf} });
+    %AC1 = (%AC1, %{ $data_structure_reference->{ac1} });
+    %AC2 = (%AC2, %{ $data_structure_reference->{ac2} });
+});
+
+
 foreach my $handle (@vcfFilesFH)
 {
-    my $sample;
+    my $pid = $pm1->start and next;
+    
+    my ($sample, %v, %a1, %a2);
     
     while (my $line = <$handle>)
     {
@@ -93,7 +128,7 @@ foreach my $handle (@vcfFilesFH)
         #put VCF line into array
         my @fields = split(/\t/, $line);
         my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $SAMPLE) = @fields[0..9];
-        my $AC = (split(/;/, $INFO))[0];
+        my $AC = (split(/;/, $INFO))[0] or die "No AC info for $sample at line $.\n";
 
         #AC = Alternative allele count
         #The variant caller has been used in diploid mode, even though we're working on bacteria
@@ -103,23 +138,26 @@ foreach my $handle (@vcfFilesFH)
         #Thus, AC=1 suggest that sample might contain multiple isolates.
 
         #AC=1
-        push (@{ $AC1{$sample}{$CHROM} }, $POS) if ($AC eq 'AC=1' && $QUAL > 0);
+        push (@{ $a1{$sample}{$CHROM} }, $POS) if ($AC eq 'AC=1' && $QUAL > 0);
         
         #AC=2
-        push (@{ $AC2{$sample}{$CHROM} }, $POS) if ($AC eq 'AC=2' && $QUAL > $minQual);
+        push (@{ $a2{$sample}{$CHROM} }, $POS) if ($AC eq 'AC=2' && $QUAL > $minQual);
                 
-        #Put data in hash of hashes of array
-        # push(@{ $vcfs{$sample}{$CHROM}{$POS} }, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $SAMPLE);
-        push(@{ $vcfs{$sample}{$CHROM}{$POS} }, $ALT);
+        #Put data in hash of hashes of arrays
+        push(@{ $v{$sample}{$CHROM}{$POS} }, $ALT);
     }
+    $pm1 -> finish(0, { vcf => \%v, ac1 => \%a1 , ac2 => \%a2 } );
 }
+
+$pm1 -> wait_all_children();
+
+
 
 #close VCF files handles
 foreach my $handle (@vcfFilesFH)
 {
     close($handle);
 }
-
 
 print "Extracting all AC=2 positions...\n";
 
@@ -161,6 +199,9 @@ foreach my $sample ( sort keys %AC1)
         }
     }
 }
+
+#AC=1 report
+open(my $ac1OutFH, ">", $ac1Out) or die "Error writing to output file $ac1Out: $!\n";
 
 #Report AC=1 also in AC=2 per sample
 foreach my $sample (sort keys %finalAC1)
@@ -215,12 +256,12 @@ print "Gathering all valid filtered SNP positions ...\n";
 my (%fastas, %counts);
 
 #setting up the forking process
-my $nCPU = Sys::CPU::cpu_count();
+$memFree = Sys::MemInfo::freemem(); #in byte
+$maxProcessMEM = int($memFree / $requiredMEM);
+$maxProcess = min($maxProcessCPU, $maxProcessMEM);
+# my $pm = Parallel::ForkManager -> new($maxProcess);
 my $pm = Parallel::ForkManager -> new($nCPU);
 
-#http://search.cpan.org/~yanick/Parallel-ForkManager-1.19/lib/Parallel/ForkManager.pm
-#Each child process may optionally send 1 data structure back to the parent.
-#By data structure, we mean a reference to a string, hash or array. 
 $pm->run_on_finish(sub {
     my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
     
@@ -229,7 +270,6 @@ $pm->run_on_finish(sub {
 
 my @mySamples = sort keys %AC2;
 my $s = $mySamples[0];
-
 
 foreach my $sample (@mySamples)
 {
@@ -247,7 +287,7 @@ foreach my $sample (@mySamples)
             # or is AC=1, but was also found in AC=2
             if( grep(/\b$pos\b/, @{ $AC2{$sample}{$chrom} }) || grep(/\b$pos\b/, @{ $finalAC1{$sample}{$chrom} }) ) #"\b is for word boundary -> exact word match"
             {
-                $allele = @{ $vcfs{$sample}{$chrom}{$pos} }[2]; #ALT allele
+                $allele = @{ $vcfs{$sample}{$chrom}{$pos} }[0]; #ALT allele
             }
             #Make sure all SNP positions are in all samples
             #Fill with reference genome allele information
@@ -265,6 +305,10 @@ foreach my $sample (@mySamples)
 }
 
 $pm -> wait_all_children();
+
+#Free up some memory
+undef %vcfs;
+undef %finalAC1;
 
 
 #List ALT alleles found at each position
@@ -366,7 +410,7 @@ foreach my $chrom ( sort keys %{ $fastas{$s} } )
     push ( @{ $posListSorted{$chrom} }, sort { $a <=> $b } @{ $posList{$chrom} });
 }
 
-
+undef (%fastas);
 
 #Output parsimony SNPs concatenated in table and fasta format
 
