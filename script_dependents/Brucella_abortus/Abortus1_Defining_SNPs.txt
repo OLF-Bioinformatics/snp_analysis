@@ -42,3 +42,6 @@ Designation	Chromosome	Position	ALT	Label
 15F	gi|62288991|ref|NC_006932.1|	971548	T	Subgroup
 15G	gi|62316961|ref|NC_006933.1|	177302	G	Subgroup
 15H	gi|62288991|ref|NC_006932.1|	1155825	A	Subgroup
+17	gi|62288991|ref|NC_006932.1|	1096826  A	Group
+18	gi|62288991|ref|NC_006932.1|	1085991	G	Group
+12B gi|62288991|ref|NC_006932.1|	1013844 A Subgroup

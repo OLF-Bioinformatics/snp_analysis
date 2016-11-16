@@ -9,10 +9,10 @@
 
 
 #where fastq reads are
-export fastqPath=""${HOME}"/Desktop/bru"
+export fastqPath=""${HOME}"/Desktop/tb_OLF"
 
 #Analysis root directory
-export baseDir=""${HOME}"/analyses/brucella_script1_test" #make variable global (for called scripts)
+export baseDir=""${HOME}"/analyses/mbovis_script1_newOLF" #make variable global (for called scripts)
 
 #script dependenties
 export dependents=""${HOME}"/prog/snp_analysis/script_dependents"

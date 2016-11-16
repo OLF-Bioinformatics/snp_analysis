@@ -17,7 +17,7 @@
 # folder="$1"
 # conversionTable="$2"
 
-folder="/media/bioinfo/SANDISK128/olga/mbovis_16_23"
+folder="/media/bioinfo/SANDISK128/olga/6andUSDA"
 conversionTable="/media/3tb_hdd/data/Mycobaterium_bovis/TB_tree_transtate_fuller.txt"
 
 ###### CHECKS ######

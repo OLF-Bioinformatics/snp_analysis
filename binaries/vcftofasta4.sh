@@ -879,7 +879,7 @@ function filterFilespreparation ()
 function changeLowQUAL ()
 {
     find -L "$baseDir" -type f | grep -F ".vcf" \
-        | parallel 'awk -v x="$QUAL" -v y="$highEnd" '"'"'BEGIN {OFS="\t"} { if ($6 >= x && $6 <= y) print $1, $2, $3, $4, "N", $6, $7, $8, $9, $10; else print $0 }'"'"' {} > {.}.tmp'
+        | parallel 'awk -v x="$QUAL" -v y="$highEnd" '"'"'BEGIN {OFS="\t"} { if ($1 !~ /^#/ && $6 >= x && $6 <= y) print $1, $2, $3, $4, "N", $6, $7, $8, $9, $10; else print $0 }'"'"' {} > {.}.tmp'
 
     #rename files
     find "$baseDir" -type f | grep -F ".tmp" \
@@ -1052,50 +1052,16 @@ function fasta_table ()
                                     {} \
                                     {}.filtered"
 
-                #rename files
-                # for i in $(find "$d" -type f | grep -F ".vcf.filtered"); do
-                #     # echo ""$i" -> "${i%.*}""
-                #     mv "$i" "${i%.*}" #overwrites the pre-filtered file
-                # done
-
                 find "$d" -type f | grep -F ".vcf.filtered" \
                     | parallel "mv {} {.}"
-
-                
-
-                # #counter
-                # total=$(find "$d" -maxdepth 1 -type f | grep -F ".vcf" | wc -l)
-                # counter=0
-
-                # #Mark vcf allowing areas of the genome to be removed from the SNP analysis
-                # for i in $(find "$d" -maxdepth 1 -type f | grep -F ".vcf"); do #don't look at the backed up vcf folder (starting_files)
-                #     # i=""${d}"/MBWGS083.SNPsZeroCoverage.vcf"
-                #     m=$(basename "$i")
-                #     n="${m%%.*}"
-
-                #     let counter+=1
-
-                #     echo -e "Working on "$n"... ("${counter}"/"${total}")"
-
-                #     #Usage: perl regionRemover.pl <FilterToAll.txt> <chroms.txt> <input.vcf> <filtered.vcf>
-                #     regionRemover.pl \
-                #         "${filterdir}/FilterToAll.txt" \
-                #         "${baseDir}"/chroms.txt \
-                #         "$i" \
-                #         "${i}".filtered
-                #     wait
-
-                #     #Replace original vcf by the filtered one
-                #     mv "${i}".filtered "$i"
-                # done
             fi
         fi
 
         echo ""${dName}":" >> "${baseDir}"/section4.txt
 
-        # d=""${baseDir}"/all_vcfs"
+        # d=""${baseDir}"/all_vcfs" #debug
 
-        #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
+        # # #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
         snpTableMaker.pl \
             "$genome" \
             "$d" \
@@ -1106,6 +1072,16 @@ function fasta_table ()
             "${d}"/fasta \
             "${d}"/"${dName}".table.txt #> "${baseDir}"/"${dName}"_outputPostions.txt
         wait
+
+        # snpTableMaker.py \
+        #     -r "$genome" \
+        #     -v "$d" \
+        #     -q "$QUAL" \
+        #     -ac1 "${d}"/"${dName}"_AC1Report.txt \
+        #     -s4 "${baseDir}"/section4.txt \
+        #     -o "${d}"/fasta \
+        #     -t "${d}"/"${dName}".table.txt
+        # wait
 
         #target the samples that have too many AC=1 also found in AC=2 (more than 20)
         echo -e "Sample\tAC1_in_AC2" > "${d}"/"${dName}"_maybeMixed.txt
@@ -1146,7 +1122,7 @@ function alignTable ()
     echo -e "\nRAxML started on "$dName" --> "$(date "+%F %A %H:%M:%S")""
 
     cat "${d}"/*.fas \
-        | awk '{print $0}'  \
+        | awk '{print $0}' \
         | sed '/root/{N;d;}' \
         >> "${d}"/fastaGroup.txt
 

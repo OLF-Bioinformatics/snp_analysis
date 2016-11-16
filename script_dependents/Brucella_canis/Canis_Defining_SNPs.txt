@@ -1,2 +1,2 @@
-Designation	Position	ALT	Label
-1	263412		Group
+Designation	Chromosome	Position	ALT	Label
+1	gi|161617991|ref|NC_010103.1|	263412		Group

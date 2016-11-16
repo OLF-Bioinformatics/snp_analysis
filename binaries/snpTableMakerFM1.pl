@@ -178,7 +178,7 @@ foreach my $chrom (sort keys %allAC2)
     @{ $allAC2{$chrom} } = sort { $a <=> $b } (uniq (@{ $allAC2{$chrom} }));
 }
 
-print "Find AC=1/AC=2 positions...\n";
+print "Finding AC=1/AC=2 positions...\n";
 
 #Find AC=1 also in AC=2 (intersection)
 my %finalAC1;
@@ -310,6 +310,7 @@ $pm -> wait_all_children();
 undef %vcfs;
 undef %finalAC1;
 
+print "Looking for informative positions...\n";
 
 #List ALT alleles found at each position
 foreach my $sample ( sort keys %fastas )
@@ -329,8 +330,6 @@ foreach my $sample ( sort keys %fastas )
 #print $FH Dumper \%counts;
 #close($FH);
 #exit;
-
-print "Looking for informative positions...\n";
 
 my %informativePos;
 

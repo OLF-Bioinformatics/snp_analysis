@@ -1,2 +1,2 @@
-Designation	Position	ALT	Label
-1	2257898		Group
+Designation	Chromosome	Position	ALT	Label
+1	Bceti1Cudo	2257898		Group
