@@ -1061,27 +1061,26 @@ function fasta_table ()
 
         # d=""${baseDir}"/all_vcfs" #debug
 
-        # # #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <minAltQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
-        snpTableMaker.pl \
-            "$genome" \
-            "$d" \
-            "$QUAL" \
-            "$highEnd" \
-            "${d}"/"${dName}"_AC1Report.txt \
-            "${baseDir}"/section4.txt \
-            "${d}"/fasta \
-            "${d}"/"${dName}".table.txt #> "${baseDir}"/"${dName}"_outputPostions.txt
-        wait
-
-        # snpTableMaker.py \
-        #     -r "$genome" \
-        #     -v "$d" \
-        #     -q "$QUAL" \
-        #     -ac1 "${d}"/"${dName}"_AC1Report.txt \
-        #     -s4 "${baseDir}"/section4.txt \
-        #     -o "${d}"/fasta \
-        #     -t "${d}"/"${dName}".table.txt
+        # # #Usage: perl snpTableMaker.pl <ref.fasta> <vcfFolder> <minQual> <AC1Report.txt> <section4.txt> <fastaOutFolder> <fastaTable.tsv>
+        # snpTableMaker.pl \
+        #     "$genome" \
+        #     "$d" \
+        #     "$QUAL" \
+        #     "${d}"/"${dName}"_AC1Report.txt \
+        #     "${baseDir}"/section4.txt \
+        #     "${d}"/fasta \
+        #     "${d}"/"${dName}".table.txt #> "${baseDir}"/"${dName}"_outputPostions.txt
         # wait
+
+        snpTableMaker.py \
+            -r "$genome" \
+            -v "$d" \
+            -q "$QUAL" \
+            -ac1 "${d}"/"${dName}"_AC1Report.txt \
+            -s4 "${baseDir}"/section4.txt \
+            -o "${d}"/fasta \
+            -t "${d}"/"${dName}".table.txt
+        wait
 
         #target the samples that have too many AC=1 also found in AC=2 (more than 20)
         echo -e "Sample\tAC1_in_AC2" > "${d}"/"${dName}"_maybeMixed.txt

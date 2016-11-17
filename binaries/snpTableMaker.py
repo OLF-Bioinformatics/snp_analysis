@@ -6,7 +6,6 @@ import random
 __author__ = 'duceppemo'
 
 
-
 class SnpTableMaker(object):
     """
     Everything is ran inside the class because data structures have to be
@@ -18,7 +17,7 @@ class SnpTableMaker(object):
         import sys
         import glob
         import multiprocessing
-        from Queue import Queue
+        # from Queue import Queue
         # from collections import defaultdict
 
         # Define variables based on supplied arguments
@@ -59,16 +58,17 @@ class SnpTableMaker(object):
             self.vcfList.append(filename)
 
         # Initialise queues
-        self.vcfqueue = Queue(maxsize=self.cpus)
-        self.snpqueue = Queue(maxsize=self.cpus)
-        self.devnull = open(os.devnull, 'wb')
+        # self.vcfqueue = Queue(maxsize=self.cpus)
+        # self.snpqueue = Queue(maxsize=self.cpus)
+        # self.devnull = open(os.devnull, 'wb')
 
         # run the script
         self.snp_table_maker()
 
     def snp_table_maker(self):
         self.parse_ref()
-        self.vcf_threads()
+        # self.vcf_threads()
+        self.parse_vcf()
         self.find_ac1_in_ac2()
         self.write_ac1_report()
         self.snp_theads()
@@ -89,82 +89,138 @@ class SnpTableMaker(object):
         fh.close()
 
     def vcf_threads(self):
-        from threading import Thread
-
-        print 'Parsing VCF files...'
-
-        for i in range(self.cpus):
-            # Send the threads to the appropriate destination function
-            threads = Thread(target=self.parse_vcf, args=())
-            # Set the daemon to true - something to do with thread management
-            threads.setDaemon(True)
-            # Start the threading
-            threads.start()
-
-        # put all vcf files in queue
-        for samplefile in self.vcfList:
-            self.vcfqueue.put(samplefile)
-
-        # Join the threads
-        self.vcfqueue.join()
+        pass
+        # from threading import Thread
+        #
+        # print 'Parsing VCF files...'
+        #
+        # for i in range(self.cpus):
+        #     # Send the threads to the appropriate destination function
+        #     threads = Thread(target=self.parse_vcf, args=())
+        #     # Set the daemon to true - something to do with thread management
+        #     threads.setDaemon(True)
+        #     # Start the threading
+        #     threads.start()
+        #
+        # # put all vcf files in queue
+        # for samplefile in self.vcfList:
+        #     self.vcfqueue.put(samplefile)
+        #
+        # # Join the threads
+        # self.vcfqueue.join()
 
     def parse_vcf(self):
         import sys
 
-        while True:
-            samplefile = self.vcfqueue.get()
+        print 'Parsing VCF files...'
+
+        for samplefile in self.vcfList:
             sample = os.path.basename(samplefile).split('.')[0]  # get what's before the first dot
+            self.vcfs[sample] = dict()
 
-            # start populating the vcfs dictionary
-            # self.vcfs[sample] = dict()
+            if sample == '01-0423':
+                pass
 
-            with open(samplefile, 'rU') as f:  # open file
+            with open(samplefile, 'r') as f:  # open file
                 for line in f:  # read file line by line
-                    line = line.rstrip()  # chomp
-                    if line:  # skip blank lines or lines with only whitespaces
-                        if line.startswith('##'):  # skip comment lines
-                            continue
-                        elif line.startswith('#CHROM'):
-                            sample_name = line.split("\t")[9]
-                            if sample_name != sample:
-                                sys.exit('File name and sample name inside VCF file are different: %s' % samplefile)
-                        else:
-                            # chrom, pos, alt, qual = [line.split()[i] for i in (0, 1, 4, 5)]
-                            chrom = line.split()[0]
-                            pos = int(line.split()[1])
-                            alt = line.split()[4]
-                            qual = line.split()[5]
-                            ac = line.split()[7].split(';')[0]
-
-                            # http://www.saltycrane.com/blog/2010/02/python-setdefault-example/
-                            self.vcfs.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(alt)
-
-                            if ac == 'AC=1' and qual > self.args.minQUAL:
-                                self.ac1s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
-
-                            if ac == 'AC=2' and qual > self.args.minQUAL:
-                                self.ac2s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
-                                # self.allac2.setdefault(chrom, []).append(pos)
-                                if chrom in self.allac2:
-                                    if pos in self.allac2[chrom]:
-                                        pass
-                                    else:
-                                        self.allac2.setdefault(chrom, []).append(pos)
+                            line = line.rstrip()  # chomp -> remove trailing whitespace characters
+                            if line:  # skip blank lines or lines with only whitespaces
+                                if line.startswith('##'):  # skip comment lines
+                                    continue
+                                elif line.startswith('#CHROM'):
+                                    sample_name = line.split("\t")[9]
+                                    if sample_name != sample:
+                                        sys.exit('File name and sample name inside VCF file are different: %s'
+                                                 % samplefile)
                                 else:
-                                    self.allac2.setdefault(chrom, [])
-                                # try:
-                                #     pos in self.allac2[chrom]
-                                # except KeyError:
-                                #     self.allac2.setdefault(chrom, []).append(pos)
+                                    # chrom, pos, alt, qual = [line.split()[i] for i in (0, 1, 4, 5)]
+                                    chrom = line.split()[0]
+                                    pos = int(line.split()[1])
+                                    alt = line.split()[4]
+                                    qual = line.split()[5]  # string -> needs to be converted to integer
+                                    if qual != '.':
+                                        try:
+                                            qual = float(qual)
+                                        except ValueError:
+                                            qual = int(qual)
+                                    ac = line.split()[7].split(';')[0]
 
-            self.vcfqueue.task_done()
+                                    # http://www.saltycrane.com/blog/2010/02/python-setdefault-example/
+                                    self.vcfs.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, [])\
+                                        .append(alt)
+
+                                    if ac == 'AC=1' and qual > self.args.minQUAL and ac != '.':
+                                        self.ac1s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
+
+                                    if ac == 'AC=2' and qual > self.args.minQUAL and ac != '.':
+                                        self.ac2s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
+                                        # self.allac2.setdefault(chrom, []).append(pos)
+                                        if chrom in self.allac2:
+                                            if pos in self.allac2[chrom]:
+                                                pass
+                                            else:
+                                                self.allac2.setdefault(chrom, []).append(pos)
+                                        else:
+                                            self.allac2.setdefault(chrom, [])
+                                        # try:
+                                        #     pos in self.allac2[chrom]
+                                        # except KeyError:
+                                        #     self.allac2.setdefault(chrom, []).append(pos)
+
+        # while True:
+        #     samplefile = self.vcfqueue.get()
+        #     sample = os.path.basename(samplefile).split('.')[0]  # get what's before the first dot
+        #
+        #     # start populating the vcfs dictionary
+        #     # self.vcfs[sample] = dict()
+        #
+        #     with open(samplefile, 'rU') as f:  # open file
+        #         for line in f:  # read file line by line
+        #             line = line.rstrip()  # chomp
+        #             if line:  # skip blank lines or lines with only whitespaces
+        #                 if line.startswith('##'):  # skip comment lines
+        #                     continue
+        #                 elif line.startswith('#CHROM'):
+        #                     sample_name = line.split("\t")[9]
+        #                     if sample_name != sample:
+        #                         sys.exit('File name and sample name inside VCF file are different: %s' % samplefile)
+        #                 else:
+        #                     # chrom, pos, alt, qual = [line.split()[i] for i in (0, 1, 4, 5)]
+        #                     chrom = line.split()[0]
+        #                     pos = int(line.split()[1])
+        #                     alt = line.split()[4]
+        #                     qual = line.split()[5]
+        #                     ac = line.split()[7].split(';')[0]
+        #
+        #                     # http://www.saltycrane.com/blog/2010/02/python-setdefault-example/
+        #                     self.vcfs.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(alt)
+        #
+        #                     if ac == 'AC=1' and qual > self.args.minQUAL:
+        #                         self.ac1s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
+        #
+        #                     if ac == 'AC=2' and qual > self.args.minQUAL:
+        #                         self.ac2s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
+        #                         # self.allac2.setdefault(chrom, []).append(pos)
+        #                         if chrom in self.allac2:
+        #                             if pos in self.allac2[chrom]:
+        #                                 pass
+        #                             else:
+        #                                 self.allac2.setdefault(chrom, []).append(pos)
+        #                         else:
+        #                             self.allac2.setdefault(chrom, [])
+        #                         # try:
+        #                         #     pos in self.allac2[chrom]
+        #                         # except KeyError:
+        #                         #     self.allac2.setdefault(chrom, []).append(pos)
+        #
+        #     self.vcfqueue.task_done()
 
     def find_ac1_in_ac2(self):
         print 'Finding AC=1/AC=2 positions...'
 
         if isinstance(self.ac1s, dict):  # check if it's a dict before using .iteritems()
             for sample, chromosomes in self.ac1s.iteritems():
-                self.finalac1.setdefault(sample, {})  # to be sure all samples are in finalac1, some dont have ac1s
+                # self.finalac1.setdefault(sample, {})  # to be sure all samples are in finalac1, some don't have ac1s
                 if isinstance(chromosomes, dict):  # check for dict
                     for chrom, positions in chromosomes.iteritems():
                         if isinstance(positions, list):  # check for list
@@ -200,7 +256,7 @@ class SnpTableMaker(object):
         #     threads.start()
         #
         # # put all vcf files in queue
-        # for sample in list(self.ac2s.keys()):
+        # for sample in self.ac2s:
         #     self.snpqueue.put(sample)
         #
         # # Join the threads
@@ -209,16 +265,32 @@ class SnpTableMaker(object):
     def get_valid_snps(self):
         print 'Getting allele values...'
 
-        for sample in self.ac2s.keys():
-            for chrom in self.ac2s[sample].keys():
-                for pos in list(self.allac2[chrom]):
-                    try:  # some samples are not in finalac1!!!
-                        allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
-                    except KeyError:
-                        allele = self.refgenome[chrom].seq[pos-1]
+        for sample in sorted(self.ac2s):
+            for chrom in sorted(self.ac2s[sample]):
+                for pos in sorted(self.allac2[chrom]):
 
-                    if allele == '.':
-                        continue
+                    if pos == 107043 and sample == '09-1465':
+                        pass
+
+                    if pos in sorted(self.ac2s[sample][chrom]):  # word match
+                        allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
+
+                    else:
+                        try:
+                            if pos in self.finalac1[sample][chrom]:
+                                allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
+                            else:
+                                allele = self.refgenome[chrom].seq[pos - 1]
+                        except KeyError:
+                            allele = self.refgenome[chrom].seq[pos - 1]
+
+                    # elif sample in self.finalac1:  # not all samples are in finalac1
+                    #     if chrom in self.finalac1[sample]:
+                    #         if pos in self.finalac1[sample][chrom]:
+                    #             allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
+                    # else:
+                    #     allele = self.refgenome[chrom].seq[pos-1]
+
                     self.fastas.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(allele)
 
                     try:
@@ -254,16 +326,24 @@ class SnpTableMaker(object):
     def get_informative_snps(self):
         print 'Getting informative SNPs...'
 
-        if isinstance(self.fastas, dict):
-            for sample, chromosomes in self.fastas.iteritems():
-                self.finalac1.setdefault(sample, {})
-                if isinstance(chromosomes, dict):
-                    for chrom, positions in sorted(chromosomes.iteritems()):
-                        if isinstance(positions, dict):
-                            for pos, allele in sorted(positions.iteritems()):
-                                if len(self.counts[chrom][pos]) > 1:
-                                    self.informative_pos.setdefault(sample, {}).setdefault(chrom, {})\
-                                        .setdefault(pos, []).append(''.join(allele))  # need chrom and pos for root seq
+        # if isinstance(self.fastas, dict):
+        #     for sample, chromosomes in self.fastas.iteritems():
+        #         self.finalac1.setdefault(sample, {})
+        #         if isinstance(chromosomes, dict):
+        #             for chrom, positions in sorted(chromosomes.iteritems()):
+        #                 if isinstance(positions, dict):
+        #                     for pos, allele in sorted(positions.iteritems()):
+        #                         if len(self.counts[chrom][pos]) > 1:
+        #                             if allele != '.':
+        #                                 self.informative_pos.setdefault(sample, {}).setdefault(chrom, {})\
+        #                                     .setdefault(pos, []).append(''.join(allele))
+        for sample in sorted(self.fastas):
+            for chrom in sorted(self.fastas[sample]):
+                for pos in sorted(self.fastas[sample][chrom]):
+                    if len(self.counts[chrom][pos]) > 1:
+                        allele = ''.join(self.fastas[sample][chrom][pos])  # convert list to string
+                        self.informative_pos.setdefault(sample, {}).setdefault(chrom, {})\
+                            .setdefault(pos, []).append(''.join(allele))
 
     def count_snps(self):
         print 'Counting SNPs...'
@@ -282,7 +362,7 @@ class SnpTableMaker(object):
         print "Total filtered SNPs: {}\n".format(filteredcount)
         print "Total informative SNPs: {}\n".format(informativecount)
 
-        #write to file
+        # write to file
         fh = open(self.section4, "a")  # append mode
         fh.write("Total filtered SNPs: {}\n".format(filteredcount))
         fh.write("Total informative SNPs: {}\n\n".format(informativecount))
@@ -304,6 +384,8 @@ class SnpTableMaker(object):
                         if isinstance(positions, dict):
                             for pos, allele in sorted(positions.iteritems()):
                                 if isinstance(allele, list):
+                                    if len(allele) == 0:
+                                        continue
                                     fh.write(''.join(allele))  # convert list to text
                 fh.write("\n")
 

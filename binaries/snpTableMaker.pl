@@ -37,12 +37,39 @@ sub uniq {
 }
 
 
+##################
+#                #
+#   Ref genome   #
+#                #
+##################
+
+
+print ("Parsing reference genome...\n");
+
+#Parse reference genome fasta file into an hash (works if multiple chromosomes)
+my %ref;
+
+#use Bio::SeqI
+my $seqIO = Bio::SeqIO -> new( -format => "fasta",
+                            -file => "$genomeFile");
+
+#process each chromosome
+while (my $seq = $seqIO -> next_seq)
+{
+    # process each seq
+    #push value to hash of arrays
+    push ( @{ $ref{$seq->id} }, $seq->seq() );
+}
+
+
 #################
 #               #
 #   VCF files   #
 #               #
 #################
 
+
+print ("Parsing VCF files...\n");
 
 #open directory with VCF files to look into
 opendir(my $vcfDirFH, $vcfFolder) or die "Could not open $vcfFolder: $!\n";
@@ -132,6 +159,8 @@ foreach my $chrom (sort keys %allAC2)
 
 
 #Find AC=1 also in AC=2 (intersection)
+print ("Finding AC=1/AC=2 positions...\n");
+
 my %finalAC1;
 
 foreach my $sample ( sort keys %AC1)
@@ -151,6 +180,8 @@ foreach my $sample ( sort keys %AC1)
 }
 
 #AC=1 report
+print ("Writing AC=1/AC=2 report to file...\n");
+
 open(my $ac1OutFH, ">", $ac1Out) or die "Error writing to output file $ac1Out: $!\n";
 
 #Report AC=1 also in AC=2 per sample
@@ -166,35 +197,14 @@ foreach my $sample (sort keys %finalAC1)
 close($ac1OutFH);
 
 
-##################
-#                #
-#   Ref genome   #
-#                #
-##################
-
-
-#Parse reference genome fasta file into an hash (works if multiple chromosomes)
-my %ref;
-
-#use Bio::SeqI
-my $seqIO = Bio::SeqIO -> new( -format => "fasta",
-                            -file => "$genomeFile");
-
-#process each chromosome
-while (my $seq = $seqIO -> next_seq)
-{
-    # process each seq
-    #push value to hash of arrays
-    push ( @{ $ref{$seq->id} }, $seq->seq() );
-}
-
-
 ################
 #              #
 #   All SNPs   #
 #              #
 ################
 
+
+print ("Getting allele values...\n");
 
 #Filtered SNP positions
 #Replace missing SNP with REF
@@ -235,6 +245,7 @@ foreach my $sample ( sort keys %AC2)
     }
 }
 
+print ("Getting informative SNPs...\n");
 my %informativePos;
 
 foreach my $sample ( sort keys %fastas)
@@ -258,6 +269,8 @@ foreach my $sample ( sort keys %fastas)
 #               #
 #################
 
+
+print ("Counting SNPs...\n");
 
 #Count report, append mode because file already exists
 open(my $countOutFH, ">>", $countOut) or die "Error writing to output file $countOut: $!\n";
@@ -291,6 +304,7 @@ close($countOutFH);
 #               #
 #################
 
+print ("Writing sample fasta files...\n");
 
 my %posList;
 foreach my $chrom ( sort keys %{ $fastas{$s} } )
@@ -349,6 +363,7 @@ foreach my $sample (sort keys %informativePos)
 #              #
 ################
 
+print ("Writing root fasta file...\n");
 
 #Create "root" sequence
 #Made from REF for all informative positions
@@ -383,6 +398,8 @@ close ($fastaFH);
 #               #
 #################
 
+
+print ("Writing SNP table...\n");
 
 #Create SNP table output file
 open (my $tableFH, ">", $fastaTable)  or die "Error writing to output file $fastaTable: $!\n";
