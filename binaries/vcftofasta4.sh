@@ -85,10 +85,12 @@ END
 
 
 #Where analysis will take place
-baseDir=""${HOME}"/analyses/mbovis_script2_test"
+# baseDir=""${HOME}"/analyses/mbovis_script2_CAN"
+baseDir=""${HOME}"/analyses/mbovis_script2_All"
 
 #Where the VCF files are
-vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
+# vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
+vcfPath="/media/3tb_hdd/db/Mycobacterium_VCFs/vcf_source_fixed"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"

@@ -67,12 +67,10 @@ class SnpTableMaker(object):
 
     def snp_table_maker(self):
         self.parse_ref()
-        # self.vcf_threads()
         self.parse_vcf()
         self.find_ac1_in_ac2()
         self.write_ac1_report()
-        self.snp_theads()
-        self.get_valid_snps()
+        self.get_allele_values()
         self.get_informative_snps()
         self.count_snps()
         self.write_fasta()
@@ -87,27 +85,6 @@ class SnpTableMaker(object):
         fh = open(self.ref, "rU")
         self.refgenome = SeqIO.to_dict(SeqIO.parse(fh, "fasta"))
         fh.close()
-
-    def vcf_threads(self):
-        pass
-        # from threading import Thread
-        #
-        # print 'Parsing VCF files...'
-        #
-        # for i in range(self.cpus):
-        #     # Send the threads to the appropriate destination function
-        #     threads = Thread(target=self.parse_vcf, args=())
-        #     # Set the daemon to true - something to do with thread management
-        #     threads.setDaemon(True)
-        #     # Start the threading
-        #     threads.start()
-        #
-        # # put all vcf files in queue
-        # for samplefile in self.vcfList:
-        #     self.vcfqueue.put(samplefile)
-        #
-        # # Join the threads
-        # self.vcfqueue.join()
 
     def parse_vcf(self):
         import sys
@@ -162,58 +139,6 @@ class SnpTableMaker(object):
                                                 self.allac2.setdefault(chrom, []).append(pos)
                                         else:
                                             self.allac2.setdefault(chrom, [])
-                                        # try:
-                                        #     pos in self.allac2[chrom]
-                                        # except KeyError:
-                                        #     self.allac2.setdefault(chrom, []).append(pos)
-
-        # while True:
-        #     samplefile = self.vcfqueue.get()
-        #     sample = os.path.basename(samplefile).split('.')[0]  # get what's before the first dot
-        #
-        #     # start populating the vcfs dictionary
-        #     # self.vcfs[sample] = dict()
-        #
-        #     with open(samplefile, 'rU') as f:  # open file
-        #         for line in f:  # read file line by line
-        #             line = line.rstrip()  # chomp
-        #             if line:  # skip blank lines or lines with only whitespaces
-        #                 if line.startswith('##'):  # skip comment lines
-        #                     continue
-        #                 elif line.startswith('#CHROM'):
-        #                     sample_name = line.split("\t")[9]
-        #                     if sample_name != sample:
-        #                         sys.exit('File name and sample name inside VCF file are different: %s' % samplefile)
-        #                 else:
-        #                     # chrom, pos, alt, qual = [line.split()[i] for i in (0, 1, 4, 5)]
-        #                     chrom = line.split()[0]
-        #                     pos = int(line.split()[1])
-        #                     alt = line.split()[4]
-        #                     qual = line.split()[5]
-        #                     ac = line.split()[7].split(';')[0]
-        #
-        #                     # http://www.saltycrane.com/blog/2010/02/python-setdefault-example/
-        #                     self.vcfs.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(alt)
-        #
-        #                     if ac == 'AC=1' and qual > self.args.minQUAL:
-        #                         self.ac1s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
-        #
-        #                     if ac == 'AC=2' and qual > self.args.minQUAL:
-        #                         self.ac2s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
-        #                         # self.allac2.setdefault(chrom, []).append(pos)
-        #                         if chrom in self.allac2:
-        #                             if pos in self.allac2[chrom]:
-        #                                 pass
-        #                             else:
-        #                                 self.allac2.setdefault(chrom, []).append(pos)
-        #                         else:
-        #                             self.allac2.setdefault(chrom, [])
-        #                         # try:
-        #                         #     pos in self.allac2[chrom]
-        #                         # except KeyError:
-        #                         #     self.allac2.setdefault(chrom, []).append(pos)
-        #
-        #     self.vcfqueue.task_done()
 
     def find_ac1_in_ac2(self):
         print 'Finding AC=1/AC=2 positions...'
@@ -231,6 +156,9 @@ class SnpTableMaker(object):
     def write_ac1_report(self):
         print "Writing AC=1/AC=2 report to file..."
 
+        # free up resources not needed anymore
+        self.ac1s.clear()
+
         fh = open(self.ac1_report, 'w')
         if isinstance(self.finalac1, dict):
             for sample, chromosomes in sorted(self.finalac1.iteritems()):
@@ -241,40 +169,14 @@ class SnpTableMaker(object):
                                      " at position(s): " + ', '.join(map(str, positions)) + "\n\n")
         fh.close()
 
-    def snp_theads(self):
-        pass
-        # from threading import Thread
-        #
-        # print 'Getting allele values...'
-        #
-        # for i in range(self.cpus):
-        #     # Send the threads to the appropriate destination function
-        #     threads = Thread(target=self.get_valid_snps, args=())
-        #     # Set the daemon to true - something to do with thread management
-        #     threads.setDaemon(True)
-        #     # Start the threading
-        #     threads.start()
-        #
-        # # put all vcf files in queue
-        # for sample in self.ac2s:
-        #     self.snpqueue.put(sample)
-        #
-        # # Join the threads
-        # self.snpqueue.join()
-
-    def get_valid_snps(self):
+    def get_allele_values(self):
         print 'Getting allele values...'
 
         for sample in sorted(self.ac2s):
             for chrom in sorted(self.ac2s[sample]):
                 for pos in sorted(self.allac2[chrom]):
-
-                    if pos == 107043 and sample == '09-1465':
-                        pass
-
                     if pos in sorted(self.ac2s[sample][chrom]):  # word match
                         allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
-
                     else:
                         try:
                             if pos in self.finalac1[sample][chrom]:
@@ -284,13 +186,6 @@ class SnpTableMaker(object):
                         except KeyError:
                             allele = self.refgenome[chrom].seq[pos - 1]
 
-                    # elif sample in self.finalac1:  # not all samples are in finalac1
-                    #     if chrom in self.finalac1[sample]:
-                    #         if pos in self.finalac1[sample][chrom]:
-                    #             allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
-                    # else:
-                    #     allele = self.refgenome[chrom].seq[pos-1]
-
                     self.fastas.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(allele)
 
                     try:
@@ -299,44 +194,14 @@ class SnpTableMaker(object):
                     except KeyError:
                         self.counts.setdefault(chrom, {}).setdefault(pos, []).append(allele)
 
-    #     while True:
-    #         sample = self.snpqueue.get()
-    #
-    #         for chrom in list(self.ac2s[sample]):
-    #             # print "{}:{}".format(sample, chrom)
-    #             for pos in list(self.allac2[chrom]):
-    #                 # print "{}:{}:{}".format(sample, chrom, pos)
-    #                 try:  # some samples are not in finalac1!!!
-    #                     pos in self.ac2s[sample][chrom]
-    #                     allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
-    #                     # print "ALT is AC2: {}".format(allele)
-    #                 except KeyError:
-    #                     try:
-    #                         pos in self.finalac1[sample][chrom]
-    #                         allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
-    #                         # print "ALT is AC1/AC2: {}".format(allele)
-    #                     except KeyError:
-    #                         allele = self.refgenome[chrom].seq[pos-1]
-    #                         # print "ALT is from reference genome: {}:{}:{}:{}".format(sample, chrom, pos, allele)
-    #
-    #                 self.fastas.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(allele)
-    #
-    #     self.snpqueue.task_done()
-
     def get_informative_snps(self):
         print 'Getting informative SNPs...'
 
-        # if isinstance(self.fastas, dict):
-        #     for sample, chromosomes in self.fastas.iteritems():
-        #         self.finalac1.setdefault(sample, {})
-        #         if isinstance(chromosomes, dict):
-        #             for chrom, positions in sorted(chromosomes.iteritems()):
-        #                 if isinstance(positions, dict):
-        #                     for pos, allele in sorted(positions.iteritems()):
-        #                         if len(self.counts[chrom][pos]) > 1:
-        #                             if allele != '.':
-        #                                 self.informative_pos.setdefault(sample, {}).setdefault(chrom, {})\
-        #                                     .setdefault(pos, []).append(''.join(allele))
+        # free up resources not needed anymore
+        self.ac2s.clear()
+        self.allac2.clear()
+        self.finalac1.clear()
+
         for sample in sorted(self.fastas):
             for chrom in sorted(self.fastas[sample]):
                 for pos in sorted(self.fastas[sample][chrom]):
@@ -359,8 +224,8 @@ class SnpTableMaker(object):
             informativecount += len(self.informative_pos[randomsample][chrom])
 
         # print to screen
-        print "Total filtered SNPs: {}\n".format(filteredcount)
-        print "Total informative SNPs: {}\n".format(informativecount)
+        print "Total filtered SNPs: {}".format(filteredcount)
+        print "Total informative SNPs: {}".format(informativecount)
 
         # write to file
         fh = open(self.section4, "a")  # append mode
