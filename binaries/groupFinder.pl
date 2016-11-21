@@ -137,34 +137,40 @@ print ($reportFH "Sample\tGroup\tSubgroup\tClade\n");
 #Array to keep print order for report
 my @order = qw( Group Subgroup Clade ); #qw means "quote on whitespace into a list"
 
+#Carefull, a sample can belong to more than one group or can belong to no group!
+
 #loop though the hash of hashes of array
 #push(@{ $ac2InDefining{$sample}{$type} }, @{ $defining{$type}{$CHROM}{$POS}});
 foreach my $sample (sort keys %ac2InDefining)
 {
-	print ($reportFH "$sample");
-	
-	foreach my $type (@order)
-	{
-		if ($ac2InDefining{$sample} && $ac2InDefining{$sample}{$type}) #Check if it exists first
-		{
-			my $folder = "$vcfFolder/$type-@{ $ac2InDefining{$sample}{$type} }";
-			mkdir ($folder) or die "Cannot create directory $folder : $!\n" unless -d $folder;
-			
-			#copy("sourcefile","destinationfile") or die "Copy failed: $!";
-			my $vcf = "$vcfFolder/$sample.SNPsZeroCoverage.vcf";
-			copy($vcf, $folder) or die "Copy of $sample failed: $!";
-			
-			#Print to report (section3.txt)
-			print ($reportFH "\t@{ $ac2InDefining{$sample}{$type} }");
-		}
-		else #if not
-		{
-			#Print empty field
-			print ($reportFH "\t");
-		}
-	}
-	
-	print ($reportFH "\n");
+    # print to report
+    print ($reportFH "$sample");
+
+    foreach my $type (@order)
+    {
+        if ($ac2InDefining{$sample}{$type}) #Check if it exists first
+        {
+            foreach my $id (@{ $ac2InDefining{$sample}{$type} })
+            {
+                my $folder = "$vcfFolder/$type-$id";
+                mkdir ($folder) or die "Cannot create directory $folder : $!\n" unless -d $folder;
+
+                #copy("sourcefile","destinationfile") or die "Copy failed: $!";
+                my $vcf = "$vcfFolder/$sample.SNPsZeroCoverage.vcf";
+                copy($vcf, $folder) or die "Copy of $sample failed: $!";
+
+                # print to report
+                print ($reportFH "\t$id");
+            }
+        }
+        else #if not
+        {
+            #Print empty field
+            print ($reportFH "\t");
+        }
+    }
+
+    print ($reportFH "\n");
 }
 
 close ($reportFH);

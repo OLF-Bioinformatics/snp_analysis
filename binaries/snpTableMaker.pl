@@ -245,9 +245,19 @@ foreach my $sample ( sort keys %AC2)
     }
 }
 
+
+########################
+#                      #
+#   Informative SNPs   #
+#                      #
+########################
+
+
 print ("Getting informative SNPs...\n");
+
 my %informativePos;
 
+#need to get the positions in the same order for all the samples
 foreach my $sample ( sort keys %fastas)
 {
     foreach my $chrom (sort keys %{ $fastas{$sample} } )

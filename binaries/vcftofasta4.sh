@@ -159,7 +159,6 @@ dropEXT="s/\(.*\)\..*/\1/" #Just drop the extention from the file
 
 echo "Start Time: "$(date "+%F %A %H:%M:%S")"" | tee "${baseDir}"/sectiontime.txt
 starttime=$(date +%s)
-argUsed="$1"
 
 
 ######################
@@ -171,7 +170,7 @@ argUsed="$1"
 
 #populate baseDir folder (symbolic links)
 find "$vcfPath" -type f | grep -F "SNPsZeroCoverage.vcf" \
-    | parallel "ln -s {} "${baseDir}"/{/}"  # {/} means basename in parallel -> https://www.gnu.org/software/parallel/man.html
+    | parallel --bar "ln -s {} "${baseDir}"/{/}"  # {/} means basename in parallel -> https://www.gnu.org/software/parallel/man.html
 
 
 #################
@@ -881,11 +880,11 @@ function filterFilespreparation ()
 function changeLowQUAL ()
 {
     find -L "$baseDir" -type f | grep -F ".vcf" \
-        | parallel 'awk -v x="$QUAL" -v y="$highEnd" '"'"'BEGIN {OFS="\t"} { if ($1 !~ /^#/ && $6 >= x && $6 <= y) print $1, $2, $3, $4, "N", $6, $7, $8, $9, $10; else print $0 }'"'"' {} > {.}.tmp'
+        | parallel --bar 'awk -v x="$QUAL" -v y="$highEnd" '"'"'BEGIN {OFS="\t"} { if ($1 !~ /^#/ && $6 >= x && $6 <= y) print $1, $2, $3, $4, "N", $6, $7, $8, $9, $10; else print $0 }'"'"' {} > {.}.tmp'
 
     #rename files
     find "$baseDir" -type f | grep -F ".tmp" \
-        | parallel 'mv {} {.}.vcf'
+        | parallel --bar 'mv {} {.}.vcf'
 }
 
 
@@ -894,7 +893,7 @@ function changeLowQUAL ()
 function changeToIUPAC ()
 {
     find -L "$baseDir" -type f | grep -F ".vcf" \
-        | parallel \
+        | parallel --bar \
         'awk '"'"'
 BEGIN { OFS = "\t"}
 
@@ -928,7 +927,7 @@ else
 
     #rename files
     find "$baseDir" -type f | grep -F ".tmp" \
-        | parallel 'mv {} {.}.vcf'
+        | parallel --bar 'mv {} {.}.vcf'
 }
 
 
@@ -1041,18 +1040,18 @@ function fasta_table ()
         [ -d "${d}"/starting_files ] || mkdir "${d}"/starting_files
         cp "${d}"/*.vcf "${d}"/starting_files
 
-        echo -e "\nFiltering positions for "$dName":"
+        echo -e "\nFiltering positions for "$dName"..."
 
         if [ "$d" != ""${baseDir}"/all_vcfs" ]; then #skip is in all_vcfs folder, the filtering has been done already
             #Filterout group/subgroup/clade specific positions
             if [ "$FilterGroups" = "yes" ]; then
 
                 find -L "$d" -type f | grep -F ".vcf" \
-                    | parallel "regionRemover.pl \
-                                    "${filterdir}/"${dName}".txt" \
-                                    "${baseDir}"/chroms.txt \
-                                    {} \
-                                    {}.filtered"
+                    | parallel --bar "regionRemover.pl \
+                                        "${filterdir}/"${dName}".txt" \
+                                        "${baseDir}"/chroms.txt \
+                                        {} \
+                                        {}.filtered"
 
                 find "$d" -type f | grep -F ".vcf.filtered" \
                     | parallel "mv {} {.}"
@@ -1060,6 +1059,8 @@ function fasta_table ()
         fi
 
         echo ""${dName}":" >> "${baseDir}"/section4.txt
+
+        echo "\nRunning snpTableMaker on "$dName"..."
 
         # d=""${baseDir}"/all_vcfs" #debug
 
@@ -1323,7 +1324,7 @@ wait
 echo -e "\nFinding chromosomes, started -->  "$(date "+%F %A %H:%M:%S")""
 
 find -L "$baseDir" -type f | grep -F ".vcf" \
-    | parallel "cat {} | grep -vE "^#" | cut -f 1 | sort | uniq -d >> /dev/stdout" \
+    | parallel --bar "cat {} | grep -vE "^#" | cut -f 1 | sort | uniq -d >> /dev/stdout" \
     | sort | uniq -d > "${baseDir}"/chroms.txt
 
 #Chromosomes/segments found
@@ -1505,7 +1506,7 @@ if [ "$FilterAllVCFs" = "yes" ]; then
     if [ "$chromCount" -ge 1 ]; then
 
         find -L "$baseDir" -type f | grep -F ".vcf" \
-            | parallel "regionRemover.pl \
+            | parallel --bar "regionRemover.pl \
                             "${filterdir}/FilterToAll.txt" \
                             "${baseDir}"/chroms.txt \
                             {} \
@@ -1513,7 +1514,7 @@ if [ "$FilterAllVCFs" = "yes" ]; then
 
         #rename files
         find "$baseDir" -type f | grep -F ".vcf.filtered" \
-            | parallel 'mv {} {.}'
+            | parallel --bar 'mv {} {.}'
 
     else
         echo "No chromosome detected."

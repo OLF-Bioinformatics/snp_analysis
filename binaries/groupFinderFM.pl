@@ -6,13 +6,13 @@ use diagnostics;
 use File::Copy;
 use Parallel::ForkManager;
 use Sys::CPU;
-
+use Data::Dumper;
 
 #I/O
-my $definingSNPs = $ARGV[0];
-my $vcfFolder = $ARGV[1];
-my $report = $ARGV[2];
-my $minQual = $ARGV[3];
+my $definingSNPs = $ARGV[0];  # /home/bioinfo/prog/snp_analysis/script_dependents/Mycobacterium_bovis/DefiningSNPsGroupDesignations.txt
+my $vcfFolder = $ARGV[1];  # /home/bioinfo/analyses/mbovis_script2_All/
+my $report = $ARGV[2];  # /home/bioinfo/Desktop/section3.txt
+my $minQual = $ARGV[3];  # 300
 
 
 #Check if 4 arguments
@@ -95,31 +95,31 @@ foreach my $handle (@vcfFilesFH)
     my $pid = $pm1->start and next;
 
     my ($sample, %a2);
-    
+
     while (my $line = <$handle>)
     {
         chomp($line); #remove carriage return
         next if $line eq ''; #skip if empty
         next if ($line =~ /^##/); #skip if VCF header line
-        
+
         if ($line =~ /^#CHROM/)
         {
             $sample = (split(/\t/, $line))[9];
             next;
         }
-        
+
         #put VCF line into array
         my @fields = split(/\t/, $line);
-        my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $SAMPLE) = @fields[0..9];
+        my ($CHROM, $POS, $QUAL, $INFO) = @fields[0,1,5,7];
         my $AC = (split(/;/, $INFO))[0]; #AC is always the first field
-        
-        
+
+
         #AC=2 postions which are Defining SNPs and found in VCF file
         #push( @{ $defining{$type}{$chrom}{$pos} }, $group);
         foreach my $type (sort keys %defining)
         {
             #if (grep { $POS eq $_ } @{ $defining{$type}{$CHROM}{$POS} } && $AC eq 'AC=2')
-            if ($defining{$type} && $defining{$type}{$CHROM} && $defining{$type}{$CHROM}{$POS} && $AC eq 'AC=2' && $QUAL > $minQual)
+            if ($defining{$type}{$CHROM}{$POS} && $AC eq 'AC=2' && $QUAL > $minQual)
             {
                 #Put data in hash of hashes of array
                 push(@{ $a2{$sample}{$type} }, @{ $defining{$type}{$CHROM}{$POS}});
@@ -155,25 +155,31 @@ print ($reportFH "Sample\tGroup\tSubgroup\tClade\n");
 #Array to keep print order for report
 my @order = qw( Group Subgroup Clade ); #qw means "quote on whitespace into a list"
 
+#Carefull, a sample can belong to more than one group or can belong to no group!
+
 #loop though the hash of hashes of array
 #push(@{ $ac2InDefining{$sample}{$type} }, @{ $defining{$type}{$CHROM}{$POS}});
 foreach my $sample (sort keys %ac2InDefining)
 {
+    # print to report
     print ($reportFH "$sample");
-    
+
     foreach my $type (@order)
     {
-        if ($ac2InDefining{$sample} && $ac2InDefining{$sample}{$type}) #Check if it exists first
+        if ($ac2InDefining{$sample}{$type}) #Check if it exists first
         {
-            my $folder = "$vcfFolder/$type-@{ $ac2InDefining{$sample}{$type} }";
-            mkdir ($folder) or die "Cannot create directory $folder : $!\n" unless -d $folder;
-            
-            #copy("sourcefile","destinationfile") or die "Copy failed: $!";
-            my $vcf = "$vcfFolder/$sample.SNPsZeroCoverage.vcf";
-            copy($vcf, $folder) or die "Copy of $sample failed: $!";
-            
-            #Print to report (section3.txt)
-            print ($reportFH "\t@{ $ac2InDefining{$sample}{$type} }");
+            foreach my $id (@{ $ac2InDefining{$sample}{$type} })
+            {
+                my $folder = "$vcfFolder/$type-$id";
+                mkdir ($folder) or die "Cannot create directory $folder : $!\n" unless -d $folder;
+
+                #copy("sourcefile","destinationfile") or die "Copy failed: $!";
+                my $vcf = "$vcfFolder/$sample.SNPsZeroCoverage.vcf";
+                copy($vcf, $folder) or die "Copy of $sample failed: $!";
+
+                # print to report
+                print ($reportFH "\t$id");
+            }
         }
         else #if not
         {
@@ -181,7 +187,7 @@ foreach my $sample (sort keys %ac2InDefining)
             print ($reportFH "\t");
         }
     }
-    
+
     print ($reportFH "\n");
 }
 

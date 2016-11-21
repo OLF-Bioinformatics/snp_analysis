@@ -17,8 +17,6 @@ class SnpTableMaker(object):
         import sys
         import glob
         import multiprocessing
-        # from Queue import Queue
-        # from collections import defaultdict
 
         # Define variables based on supplied arguments
         self.args = args
@@ -57,11 +55,6 @@ class SnpTableMaker(object):
         for filename in glob.glob(os.path.join(self.vcf, '*.vcf')):
             self.vcfList.append(filename)
 
-        # Initialise queues
-        # self.vcfqueue = Queue(maxsize=self.cpus)
-        # self.snpqueue = Queue(maxsize=self.cpus)
-        # self.devnull = open(os.devnull, 'wb')
-
         # run the script
         self.snp_table_maker()
 
@@ -80,7 +73,7 @@ class SnpTableMaker(object):
     def parse_ref(self):
         from Bio import SeqIO
 
-        print 'Parsing reference genome...'
+        print '  Parsing reference genome'
 
         fh = open(self.ref, "rU")
         self.refgenome = SeqIO.to_dict(SeqIO.parse(fh, "fasta"))
@@ -89,7 +82,7 @@ class SnpTableMaker(object):
     def parse_vcf(self):
         import sys
 
-        print 'Parsing VCF files...'
+        print '  Parsing VCF files'
 
         for samplefile in self.vcfList:
             sample = os.path.basename(samplefile).split('.')[0]  # get what's before the first dot
@@ -141,11 +134,10 @@ class SnpTableMaker(object):
                                             self.allac2.setdefault(chrom, [])
 
     def find_ac1_in_ac2(self):
-        print 'Finding AC=1/AC=2 positions...'
+        print '  Finding AC=1/AC=2 positions'
 
         if isinstance(self.ac1s, dict):  # check if it's a dict before using .iteritems()
             for sample, chromosomes in self.ac1s.iteritems():
-                # self.finalac1.setdefault(sample, {})  # to be sure all samples are in finalac1, some don't have ac1s
                 if isinstance(chromosomes, dict):  # check for dict
                     for chrom, positions in chromosomes.iteritems():
                         if isinstance(positions, list):  # check for list
@@ -154,7 +146,7 @@ class SnpTableMaker(object):
                                     self.finalac1.setdefault(sample, {}).setdefault(chrom, []).append(pos)
 
     def write_ac1_report(self):
-        print "Writing AC=1/AC=2 report to file..."
+        print "  Writing AC=1/AC=2 report to file"
 
         # free up resources not needed anymore
         self.ac1s.clear()
@@ -170,7 +162,7 @@ class SnpTableMaker(object):
         fh.close()
 
     def get_allele_values(self):
-        print 'Getting allele values...'
+        print '  Getting allele values'
 
         for sample in sorted(self.ac2s):
             for chrom in sorted(self.ac2s[sample]):
@@ -195,13 +187,14 @@ class SnpTableMaker(object):
                         self.counts.setdefault(chrom, {}).setdefault(pos, []).append(allele)
 
     def get_informative_snps(self):
-        print 'Getting informative SNPs...'
+        print '  Getting informative SNPs'
 
         # free up resources not needed anymore
         self.ac2s.clear()
         self.allac2.clear()
         self.finalac1.clear()
 
+        # need to get the positions in the same order for all the sample
         for sample in sorted(self.fastas):
             for chrom in sorted(self.fastas[sample]):
                 for pos in sorted(self.fastas[sample][chrom]):
@@ -211,8 +204,13 @@ class SnpTableMaker(object):
                             .setdefault(pos, []).append(''.join(allele))
 
     def count_snps(self):
-        print 'Counting SNPs...'
+        print '  Counting SNPs'
 
+        # free up resources not needed anymore
+        self.counts.clear()
+
+        # All samples should have the same number of informative SNPs
+        # so any can be used to get the stats
         randomsample = random.choice(self.informative_pos.keys())
 
         filteredcount = 0
@@ -224,8 +222,8 @@ class SnpTableMaker(object):
             informativecount += len(self.informative_pos[randomsample][chrom])
 
         # print to screen
-        print "Total filtered SNPs: {}".format(filteredcount)
-        print "Total informative SNPs: {}".format(informativecount)
+        print "\nTotal filtered SNPs: {}".format(filteredcount)
+        print "Total informative SNPs: {}\n".format(informativecount)
 
         # write to file
         fh = open(self.section4, "a")  # append mode
@@ -234,13 +232,17 @@ class SnpTableMaker(object):
         fh.close()
 
     def write_fasta(self):
-        print 'Writing sample fasta files...'
+        print '  Writing sample fasta files'
 
+        # free up resources not needed anymore
+        self.fastas.clear()
+
+        # Create output folder for fasta files
         if not os.path.exists(self.output):
             os.makedirs(self.output)
 
         if isinstance(self.informative_pos, dict):
-            for sample, chromosomes in self.informative_pos.iteritems():
+            for sample, chromosomes in sorted(self.informative_pos.iteritems()):
                 samplepath = os.path.join(self.output, sample + '.fas')
                 fh = open(samplepath, 'w')
                 fh.write(">{}\n".format(sample))
@@ -249,13 +251,11 @@ class SnpTableMaker(object):
                         if isinstance(positions, dict):
                             for pos, allele in sorted(positions.iteritems()):
                                 if isinstance(allele, list):
-                                    if len(allele) == 0:
-                                        continue
                                     fh.write(''.join(allele))  # convert list to text
                 fh.write("\n")
 
     def write_root(self):
-        print 'Writing root fasta file...'
+        print '  Writing root fasta file'
 
         rootpath = os.path.join(self.output, 'root.fas')
         randomsample = random.choice(self.informative_pos.keys())
@@ -269,7 +269,7 @@ class SnpTableMaker(object):
         fh.write(">root\n" + "{}\n".format(''.join(rootseq)))
 
     def write_snp_table(self):
-        print 'Writing SNP table...'
+        print '  Writing SNP table'
 
         fh = open(self.table, 'w')
 
