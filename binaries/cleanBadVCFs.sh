@@ -13,8 +13,8 @@ total=$(ls *.vcf | wc -l)
 counter=0
 
 for i in *.vcf; do
-	let counter+=1
-	echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
+    let counter+=1
+    echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
 
     cat "$i" | dos2unix | tr "\r" "\n" | sed -e "s/[[:space:]]*$//" -e 's/\"\"/\"/g' -e 's/^\"//g' -e 's/>"/>/g' > "${i}".tmp
     mv "${i}".tmp "$i"
@@ -23,8 +23,8 @@ done
 #Remove double quotes in genotype field "1/1:0,46:46:99:1530,137,0"
 counter=0
 for i in *.vcf; do
-	let counter+=1
-	echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
+    let counter+=1
+    echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
 
     cat "$i" | grep -E "^##" > "${i}".tmp #header
     cat "$i" | grep -E "^#CHROM" | cut -f 1-10 >> "${i}".tmp #Only keep the first 10 data fields, because only one sample per VCF file
@@ -43,12 +43,12 @@ for i in ./*.vcf; do
     fi
 done
 
-#Sort VCF files
+#Sort VCF files and remove duplicates
 counter=0
 for i in ./*.vcf; do
-	let counter+=1
-	echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
-	
-    (cat "$i" | grep -E "^#"; cat "$i" | grep -vE "^#" | sort -k1,1d -k2,2n;) > "${i}".tmp
+    let counter+=1
+    echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
+    
+    (cat "$i" | grep -E "^#"; cat "$i" | grep -vE "^#" | sort -k1,1d -uk2,2n;) > "${i}".tmp
     mv "${i}".tmp "$i"
 done

@@ -1060,7 +1060,7 @@ function fasta_table ()
 
         echo ""${dName}":" >> "${baseDir}"/section4.txt
 
-        echo "\nRunning snpTableMaker on "$dName"..."
+        echo -e "\nRunning snpTableMaker on "$dName"..."
 
         # d=""${baseDir}"/all_vcfs" #debug
 
@@ -1165,7 +1165,7 @@ function alignTable ()
     
     # reroot tree
 
-    echo -e "Rerooting tree..."
+    echo -e "  Rerooting tree"
 
     nw_reroot \
         "${d}"/RAxML_bestTree."$dName" \
@@ -1199,7 +1199,7 @@ function alignTable ()
     mv "${d}"/cleanedAlignment.txt{.temp,}
     wait
 
-    echo "Sorting and organizing SNP table..."
+    echo "  Sorting and organizing SNP table"
 
     #Sort and organize SNP table
     snpTableSorter.pl \
@@ -1229,7 +1229,7 @@ function alignTable ()
         > "${d}"/"${dName}"-positions.txt
 
 
-    echo -e "Extracting quality values from VCF files..."
+    echo -e "  Extracting quality values from VCF files"
 
     #Usage: perl qualityExtractor.pl <position.txt> <vcf_folder> <quality.txt>
     qualityExtractor.pl \
@@ -1238,7 +1238,7 @@ function alignTable ()
         "${d}"/quality.txt
     wait
 
-    echo "Adding map quality values to SNP table..."
+    echo "  Adding map quality values to SNP table"
 
     mapvalues.py \
         "${d}"/"${dName}".sorted_table.txt \

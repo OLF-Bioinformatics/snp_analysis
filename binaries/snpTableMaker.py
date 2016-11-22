@@ -87,10 +87,6 @@ class SnpTableMaker(object):
         for samplefile in self.vcfList:
             sample = os.path.basename(samplefile).split('.')[0]  # get what's before the first dot
             self.vcfs[sample] = dict()
-
-            if sample == '01-0423':
-                pass
-
             with open(samplefile, 'r') as f:  # open file
                 for line in f:  # read file line by line
                             line = line.rstrip()  # chomp -> remove trailing whitespace characters
@@ -113,25 +109,35 @@ class SnpTableMaker(object):
                                             qual = float(qual)
                                         except ValueError:
                                             qual = int(qual)
+                                    else:
+                                        continue  # skip line
                                     ac = line.split()[7].split(';')[0]
 
                                     # http://www.saltycrane.com/blog/2010/02/python-setdefault-example/
                                     self.vcfs.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, [])\
                                         .append(alt)
 
-                                    if ac == 'AC=1' and qual > self.args.minQUAL and ac != '.':
+                                    if ac == 'AC=1' and qual > self.args.minQUAL:
                                         self.ac1s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
 
-                                    if ac == 'AC=2' and qual > self.args.minQUAL and ac != '.':
+                                    elif ac == 'AC=2' and qual > self.args.minQUAL:
                                         self.ac2s.setdefault(sample, {}).setdefault(chrom, []).append(pos)
-                                        # self.allac2.setdefault(chrom, []).append(pos)
-                                        if chrom in self.allac2:
-                                            if pos in self.allac2[chrom]:
-                                                pass
-                                            else:
+
+                                        # This is equivalent, but faster?
+                                        try:
+                                            if pos not in self.allac2[chrom]:  # only add is not already present
                                                 self.allac2.setdefault(chrom, []).append(pos)
-                                        else:
-                                            self.allac2.setdefault(chrom, [])
+                                        except KeyError:  # chromosome does not exist in dictionary
+                                            self.allac2.setdefault(chrom, []).append(pos)
+
+                                        # This works
+                                        # if chrom in self.allac2:
+                                        #     if pos in self.allac2[chrom]:
+                                        #         pass
+                                        #     else:
+                                        #         self.allac2.setdefault(chrom, []).append(pos)
+                                        # else:
+                                        #     self.allac2.setdefault(chrom, [])
 
     def find_ac1_in_ac2(self):
         print '  Finding AC=1/AC=2 positions'
@@ -164,13 +170,15 @@ class SnpTableMaker(object):
     def get_allele_values(self):
         print '  Getting allele values'
 
-        for sample in sorted(self.ac2s):
-            for chrom in sorted(self.ac2s[sample]):
-                for pos in sorted(self.allac2[chrom]):
-                    if pos in sorted(self.ac2s[sample][chrom]):  # word match
+        for sample in self.ac2s:
+            for chrom in self.ac2s[sample]:
+                for pos in self.allac2[chrom]:
+                    # if in AC=2 for that sample
+                    if pos in self.ac2s[sample][chrom]:
                         allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
                     else:
-                        try:
+                        try:  # use a try here because some samples are not in finalac1
+                            # if in AC=1 for that sample, but also in AC=2 in other sample
                             if pos in self.finalac1[sample][chrom]:
                                 allele = ''.join(self.vcfs[sample][chrom][pos])  # convert list to string
                             else:
@@ -180,6 +188,7 @@ class SnpTableMaker(object):
 
                     self.fastas.setdefault(sample, {}).setdefault(chrom, {}).setdefault(pos, []).append(allele)
 
+                    # Track all alleles for each position
                     try:
                         if allele not in self.counts[chrom][pos]:
                             self.counts.setdefault(chrom, {}).setdefault(pos, []).append(allele)
@@ -187,6 +196,8 @@ class SnpTableMaker(object):
                         self.counts.setdefault(chrom, {}).setdefault(pos, []).append(allele)
 
     def get_informative_snps(self):
+        """SNPs position that have at least one different ALT allele within all the samples"""
+
         print '  Getting informative SNPs'
 
         # free up resources not needed anymore
@@ -194,14 +205,19 @@ class SnpTableMaker(object):
         self.allac2.clear()
         self.finalac1.clear()
 
-        # need to get the positions in the same order for all the sample
-        for sample in sorted(self.fastas):
+        # need to get the positions in the same order for all the sample (sort chrom and pos)
+        for sample in self.fastas:
             for chrom in sorted(self.fastas[sample]):
                 for pos in sorted(self.fastas[sample][chrom]):
-                    if len(self.counts[chrom][pos]) > 1:
+                    if len(self.counts[chrom][pos]) > 1:  # if more that one ALT allele, keep it
                         allele = ''.join(self.fastas[sample][chrom][pos])  # convert list to string
-                        self.informative_pos.setdefault(sample, {}).setdefault(chrom, {})\
-                            .setdefault(pos, []).append(''.join(allele))
+
+                        # check if allele is empty
+                        if allele:
+                            self.informative_pos.setdefault(sample, {}).setdefault(chrom, {})\
+                                .setdefault(pos, []).append(''.join(allele))
+                        else:
+                            print "No allele infor for {}, {}:{}".format(sample, chrom, pos)
 
     def count_snps(self):
         print '  Counting SNPs'
