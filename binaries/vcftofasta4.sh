@@ -1085,6 +1085,11 @@ function fasta_table ()
             -t "${d}"/"${dName}".table.txt
         wait
 
+        #Convert the SNP table in excel format (xlsx) with color
+        snpTableToXlsx.py \
+            all_vcfs.organized_table.txt
+            "$dName"
+
         #target the samples that have too many AC=1 also found in AC=2 (more than 20)
         echo -e "Sample\tAC1_in_AC2" > "${d}"/"${dName}"_maybeMixed.txt
 
