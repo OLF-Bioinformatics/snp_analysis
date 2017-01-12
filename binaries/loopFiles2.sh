@@ -12,8 +12,8 @@ echo "$(date)" >> "${reports}"/coverageReport.txt
 echo "" > "${reports}"/dailyReport.txt
 
 # Reset spoligo and bruc mlst check file
-echo "WG Spoligo Check" > "${reports}"/spoligoCheck.txt
-echo "Brucella MLST Check" > "${reports}"/mlstCheck.txt
+# echo "WG Spoligo Check" > "${reports}"/spoligoCheck.txt
+echo -e "Whole genome based spoligotyping\n" > "${reports}"/spoligoCheck_all.txt
 
 #Reset time stamp
 dateFile=$(date "+%Y%m%d")
@@ -86,6 +86,7 @@ for i in $(find -L "$baseDir" -maxdepth 1 -type f | grep -F "_R1" | grep -F ".fa
     if [ -n "$ID" ]; then
         if [ "$bruFound" -eq 1 ]; then
             echo "Brucella found in sample"
+            echo "Brucella MLST Check" > "${reports}"/mlstCheck.txt
             Bruc_MLST2.sh  "$r1" "$r2"
 
         elif [ "$tbFound" -eq 1 ]; then

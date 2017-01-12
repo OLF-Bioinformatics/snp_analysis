@@ -79,8 +79,9 @@ done
 
 
 WGSpoligo=$(echo "${octalCode[@]}" | tr -d " ")
-echo -e "Whole genome based spoligotyping\n" | tee -a "${reports}"/spoligoCheck.txt "${reports}"/spoligoCheck_all.txt
-echo ""$n": "$WGSpoligo"" | tee -a "${reports}"/spoligoCheck.txt
+echo -e "Whole genome based spoligotyping\n" | tee "${baseDir}"/"${n}"/"${n}"_spoligoCheck.txt
+echo ""$n": "$WGSpoligo"" | tee -a "${baseDir}"/"${n}"/"${n}"_spoligoCheck.txt "${reports}"/spoligoCheck_all.txt
+
 # echo "WGSpoligo: "$WGSpoligo"" | tee -a "${reports}"/spoligoCheck.txt
 
 #Make FileMaker file

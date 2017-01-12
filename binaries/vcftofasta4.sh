@@ -86,11 +86,11 @@ END
 
 #Where analysis will take place
 # baseDir=""${HOME}"/analyses/mbovis_script2_CAN"
-baseDir=""${HOME}"/analyses/mbovis_script2_All"
+baseDir=""${HOME}"/analyses/mbovis_script2_2017"
 
 #Where the VCF files are
 # vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
-vcfPath="/media/3tb_hdd/db/Mycobacterium_VCFs/vcf_source_fixed"
+vcfPath="/home/bioinfo/Desktop/vcf_mbovisCAN"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -1085,11 +1085,6 @@ function fasta_table ()
             -t "${d}"/"${dName}".table.txt
         wait
 
-        #Convert the SNP table in excel format (xlsx) with color
-        snpTableToXlsx.py \
-            all_vcfs.organized_table.txt
-            "$dName"
-
         #target the samples that have too many AC=1 also found in AC=2 (more than 20)
         echo -e "Sample\tAC1_in_AC2" > "${d}"/"${dName}"_maybeMixed.txt
 
@@ -1254,6 +1249,11 @@ function alignTable ()
 
     #Overwrite the old table
     mv "${d}"/"${dName}".finished_table.txt "${d}"/"${dName}".organized_table.txt
+
+    #Convert the SNP table in excel format (xlsx) with color
+    snpTableToXlsx.py \
+        "${d}"/"${dName}".organized_table.txt \
+        "$dName"
 
     #Cleanup
     rm "${d}"/quality.txt
@@ -1541,7 +1541,7 @@ fi
 
 #Find group using DefiningSNP positions and copy files to group folders
 
-echo -e "\nFind groups using DefiningSNP positions --> "$(date "+%F %A %H:%M:%S")""
+echo -e "\nFinding groups using DefiningSNP positions --> "$(date "+%F %A %H:%M:%S")""
 
 #Usage: perl AConeInDefiningSNPs.pl <definingSnps.tsv> <vcfFolder> <section2.txt>
 groupFinderFM.pl \

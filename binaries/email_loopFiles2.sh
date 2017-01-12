@@ -9,10 +9,10 @@
 
 
 #where fastq reads are
-export fastqPath=""${HOME}"/Desktop/tb_OLF"
+export fastqPath="/media/3tb_hdd/data/Mycobaterium_bovis/outbreak2016"
 
 #Analysis root directory
-export baseDir=""${HOME}"/analyses/mbovis_script1_newOLF" #make variable global (for called scripts)
+export baseDir=""${HOME}"/analyses/mbovis_script1_2017" #make variable global (for called scripts)
 
 #script dependenties
 export dependents=""${HOME}"/prog/snp_analysis/script_dependents"
@@ -71,8 +71,8 @@ cat "${reports}"/dailyStats.txt >> "${reports}"/email_processZips.txt
 echo "" >> "${reports}"/email_processZips.txt
 
 cat "${reports}"/email_processZips.txt \
-	| grep -v "*" \
-	| grep -v "Stats for BAM file" \
+    | grep -v "*" \
+    | grep -v "Stats for BAM file" \
     | sed 's/ADD_MARKER/******************************************/g' > "${reports}"/email_processZips2.txt
 
 # rm "${reports}"/email_processZips.txt
@@ -86,8 +86,10 @@ fi
 cat "${reports}"/email_processZips2.txt | mail -s "WGS results" -t "$email_list"
 # mail -s "WGS results" -t "$email_list" < "${reports}"/email_processZips2.txt
 
-echo $(date) >> "${reports}"/mlstCheck_all.txt
-cat "${reports}"/mlstCheck.txt >> "${reports}"/mlstCheck_all.txt
+# if [ -e "${reports}"/mlstCheck.txt ]; then
+#     echo $(date) >> "${reports}"/mlstCheck_all.txt
+#     cat "${reports}"/mlstCheck.txt >> "${reports}"/mlstCheck_all.txt
+# fi
 
 
 
