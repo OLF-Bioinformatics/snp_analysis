@@ -27,10 +27,13 @@
 
 
 #Where is script2 base directory (analysis folder)
-allGroups=""${HOME}"/analyses/mbovisCAN_script2v2a/all_groups"
+allGroups=""${HOME}"/analyses/mbovis_script2_2017/all_groups"
+
+#Where is script1 base directory (analysis folder)
+script1=""${HOME}"/analyses/mbovis_script1_2017"
 
 #Where to put the files needed to review the SNP table
-reportFolder="/media/bioinfo/Olga - NGS/Olga_vcf_mbovisCAN"
+reportFolder="/media/bioinfo/Olga - NGS/Olga_vcf_mbovis_outbreak"
 [ -d "$reportFolder" ] || mkdir -p "$reportFolder" #create it if doesn't exist
 
 
@@ -62,15 +65,15 @@ for i in $(find "$allGroups" -maxdepth 1 -type d | grep -F "Group");do
         # echo $sampleNameNoExt
 
         #realigned+recalibrated bam (All reads)
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/realigned/"${sampleNameNoExt}"_realigned_recalibrated.bam "$gFolder" #bam
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/realigned/"${sampleNameNoExt}"_realigned_recalibrated.bai "$gFolder" #bam index file (not sure it's needed for IGV)
+        cp "${script1}"/"${sampleNameNoExt}"/realigned/"${sampleNameNoExt}"_realigned_recalibrated.bam "$gFolder" #bam
+        cp "${script1}"/"${sampleNameNoExt}"/realigned/"${sampleNameNoExt}"_realigned_recalibrated.bai "$gFolder" #bam index file (not sure it's needed for IGV)
 
         #bam from from HaplotypeCaller bamout (Only read used to call variants)
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_haplotypes.bam "$gFolder" #bam
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_haplotypes.bai "$gFolder" #bam index file (not sure it's needed for IGV)
+        cp "${script1}"/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_haplotypes.bam "$gFolder" #bam
+        cp "${script1}"/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}"_haplotypes.bai "$gFolder" #bam index file (not sure it's needed for IGV)
 
         #vcf
-        cp "${HOME}"/analyses/mbovis_script1/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".SNPsZeroCoverage.vcf "$gFolder" #vcf (might need the vcf index file too?)
+        cp "${script1}"/"${sampleNameNoExt}"/variant/"${sampleNameNoExt}".SNPsZeroCoverage.vcf "$gFolder" #vcf (might need the vcf index file too?)
     done
 
     #copy table and tree file from script2
