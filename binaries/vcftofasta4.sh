@@ -208,9 +208,16 @@ done
 
 shift $(($OPTIND - 1))
 
-# Exit if argument b or v is missing
+# Exit if option flags b or v are missing
 if [[ -z "$baseDir" ]] || [[ -z "$vcfPath" ]]; then
     echo "Both \"-b\" and \"-v\" options are mandatory"
+    exit 1
+fi
+
+# Exit if no argument was supplied (species)
+if [ -z "$1" ]; then
+    echo "The species must be specified."
+    displayHelp
     exit 1
 fi
 
