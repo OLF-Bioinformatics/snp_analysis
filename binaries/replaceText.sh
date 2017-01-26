@@ -25,7 +25,7 @@
 # conversionTable="$2"
 
 
-folder="/media/bioinfo/SANDISK128/olga"
+folder="/media/bioinfo/SANDISK128/2017-01-19-TB"
 conversionTable="/media/3tb_hdd/data/Mycobaterium_bovis/TB_tree_transtate_fuller.txt"
 
 

@@ -86,14 +86,139 @@ END
 
 #Where analysis will take place
 # baseDir=""${HOME}"/analyses/mbovis_script2_CAN"
-baseDir=""${HOME}"/analyses/mbovis_script2_2017"
+# baseDir=""${HOME}"/analyses/mbovis_script2_2017_noHuman"
 
 #Where the VCF files are
 # vcfPath=""${HOME}"/Desktop/vcf_mbovisCAN"
-vcfPath="/home/bioinfo/Desktop/vcf_mbovisCAN"
+# vcfPath="/home/bioinfo/Desktop/vcf_mbovisCAN_noHuman"
 
 #script dependencies (the "script_dependents" folder in the "snp_analysis" folder)
 dependents=""${HOME}"/prog/snp_analysis/script_dependents"
+
+
+#################
+#               #
+#    Options    #
+#               #
+#################
+
+
+function displayHelp()
+{
+echo -e "\
+Usage: vcftofasta.sh [flag] -b analysisFolder -v vcfSourceFolder <species>
+
+Madatory argument (species; chose only one):
+
+    ab1        Brucella abortus bv 1
+    mel        Brucella melitensis
+    suis1      Brucella suis bv 1
+    suis2      Brucella suis bv 2
+    suis3      Brucella suis bv 3
+    suis4      Brucella suis bv 4
+    canis      Brucella canis
+    ceti1      Brucella ceti bv 1
+    ceti2      Brucella ceti bv 2
+    ovis       Brucella ovis
+    bovis      Mycobacterium bovis (TBBOV)
+    tb1        Mycobacterium bovis group 1
+    tb2        Mycobacterium bovis group 2
+    tb3        Mycobacterium bovis group 3
+    tb4a       ycobacterium bovis group 4a
+    tb4b       Mycobacterium bovis group 4b
+    tb5        Mycobacterium bovis group 5
+    tb6        Mycobacterium bovis group 6
+    para       Mycobacterium avium subsp. paratuberculosis
+
+Mandatory flags:
+
+    -b         base directory. Folder in which the analysis will take place
+    -v         VCF file root folder. Will look recursively for \"SNPsZeroCoverage.vcf\" files
+
+Optional flags:
+
+    -c         look for positions to filter.  By default, with no -c, this will not be done
+    -m         mail just \"M\"e
+    -e         run the bovis \"E\"lite representative samples
+    -a         get \"a\"ll_vcf alignment table
+"
+}
+
+
+#Colored error message
+BLUE='\033[1;34m'
+NC='\033[0m' # No Color
+
+
+# Set flags
+cflag=""  # look for positions to filter
+mflag=""  # email just "M"e
+eflag=""  # run the bovis "E"lite representative samples
+aflag=""  # get "a"ll_vcf alignment table
+
+
+baseDir=""  # Where analysis will take place
+vcfPath=""  # Where the VCF files are
+
+baseDir="/home/bioinfo/analyses/mbovis_script2_All2017"
+vcfPath="/media/3tb_hdd/db/Mycobacterium_VCFs"
+
+# When you want getopts to expect an argument for an option, just place a : (colon) after the proper option flag
+# If the very first character of the option-string is a : (colon) it allows you to handle errors yourself without being disturbed by annoying messages
+options=':cmeab:v:h'
+
+while getopts "$options" opt; do
+    case "$opt" in
+        c)
+            cflag=1
+            ;;
+        m)
+            mflag=1
+            ;;
+        e)
+            eflag=1
+            ;;
+        a)
+            aflag=1
+            ;;
+        b)
+            baseDir="$OPTARG"
+            ;;
+        v)
+            vcfPath="$OPTARG"
+            ;;
+        h)
+            displayHelp
+            exit 1
+            ;;
+        \?)
+            printf ""${BLUE}"Invalid option: -"$OPTARG"\n\n"${NC}"" >&2
+            # echo "Invalid option: -"$OPTARG"" >&2
+            displayHelp
+            exit 1
+            ;;
+        :)
+            printf ""${BLUE}"Option -"$OPTARG" requires an argument.\n\n"${NC}"" >&2
+            # echo "Option -"$OPTARG" requires an argument." >&2
+            displayHelp
+            exit 1
+            ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+# Exit if argument b or v is missing
+if [[ -z "$baseDir" ]] || [[ -z "$vcfPath" ]]; then
+    echo "Both \"-b\" and \"-v\" options are mandatory"
+    exit 1
+fi
+
+#if use the "elite" flag not with bovis
+if [ "$eflag" ] && [ "$1" != "bovis" ]; then 
+    echo "The \"-e\" option can only be used with \"bovis\""
+    exit 1
+fi
 
 
 #####################
@@ -123,17 +248,6 @@ filterdir=""${baseDir}"/"${uniqdate}"-FilterFiles"
 
 # Computer cores to use when analyzing
 cpu=$(nproc) 
-
-
-###############
-#             #
-#    Debug    #
-#             #
-###############
-
-
-#for debug
-# alias pause='read -p ""$LINENO" Enter"'
 
 
 ######################
@@ -172,601 +286,559 @@ starttime=$(date +%s)
 find "$vcfPath" -type f | grep -F "SNPsZeroCoverage.vcf" \
     | parallel --bar "ln -s {} "${baseDir}"/{/}"  # {/} means basename in parallel -> https://www.gnu.org/software/parallel/man.html
 
+# Uncomment if you want the script to pause so you can manually remove some VCF files (symbolic links)
+# read -p "Script paused. Remove VCF files and press return to continue script execution."
+
+
+############################
+#                          #
+#   Environment controls   #
+#                          #
+############################
+
+
+case "$1" in
+
+    ab1)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt" #to change the name of vcf files
+
+        #reference genome
+        genome=""${dependents}"/Brucella_abortus/NC_00693c.fasta"
+
+        # When more than one chromosome
+        # Genbank files must have "NC" file names that match NC numbers in VCF chrom identification in column 1 of vcf
+        # Example: File name: NC_017250.gbk and "gi|384222553|ref|NC_017250.1|" listed in vcf
+        gbk_file1=""${dependents}"/Brucella_abortus/NC_006932.gbk"
+        gbk_file2=""${dependents}"/Brucella_abortus/NC_006933.gbk"
+        gbk_files=("$gbk_file1" "$gbk_file2")
+        # echo "${gbk_files[@]}"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_abortus/Abortus1_Defining_SNPs.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        for i in "${dependents}"/Brucella_abortus/FilterFiles/*; do
+            name=$(basename "$i")
+            ln -s "$i" "${filterdir}"/"${name}"
+        done
+        
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using Brucella abortus bv 1, 2 or 4 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    mel)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_melitensis/BmelitensisM5-90.fasta"
+
+        gbk_file1=""${dependents}"/Brucella_melitensis/NC_017246.gbk"
+        gbk_file2=""${dependents}"/Brucella_melitensis/NC_017247.gbk"
+        gbk_files=("$gbk_file1" "$gbk_file2")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_melitensis/Mel_Defining_SNPs.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_melitensis/FilterFiles" #Files containing positions to filter
+        
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. melitensis variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    suis1)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_suis_bv1/NC_01725c.fasta"
+
+        gbk_file1=""${dependents}"/Brucella_suis_bv1/NC_017250.gbk"
+        gbk_file2=""${dependents}"/Brucella_suis_bv1/NC_017251.gbk"
+        gbk_files=("$gbk_file1" "$gbk_file2")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_suis_bv1/Suis1_Defining_SNPs.txt"
+
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_suis_bv1/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. suis bv1 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    suis2)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_suis_bv2/Bsuisbv2-94-11.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_suis_bv2/suis2_Defining_SNPs.txt"
+
+        FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_suis_bv2/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. suis bv2 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    suis3)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_suis_bv3/B-REF-BS3-686.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_suis_bv3/Suis3_Defining_SNPs.txt"
+
+        FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_suis_bv3/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. suis bv3 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    suis4)
+
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_suis_bv4/B-REF-BS4-40.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_suis_bv4/Suis4_Defining_SNPs.txt"
+
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_suis_bv/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. suis bv4 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    canis)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_canis/BcanisATCC23365.fasta"
+
+        gbk_file1=""${dependents}"/Brucella_canis/NC_010103.gbk"
+        gbk_file2=""${dependents}"/Brucella_canis/NC_010104.gbk"
+        gbk_files=("$gbk_file1" "$gbk_file2")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_canis/Canis_Defining_SNPs.txt"
+
+        FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_canis/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. canis variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    ceti1)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_ceti-grp1/Bceti1Cudo.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_ceti-grp1/Ceti1_Defining_SNPs.txt"
+
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_ceti-grp1/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B ceti group 1 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"        
+        ;;
+
+    ceti2)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_ceti-grp2/BBceti2-TE10759.fasta"
+
+        gbk_file1=""${dependents}"/Brucella_abortus/NC_022905.gbk"
+        gbk_file2=""${dependents}"/Brucella_abortus/NC_022906.gbk"
+        gbk_files=("$gbk_file1" "$gbk_file2")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_ceti-grp2/Ceti2_Defining_SNPs.txt"
+
+        FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_ceti-grp2/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B ceti group 2 variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    ovis)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Brucella_ovis/BovisATCC25840.fasta"
+
+        gbk_file1=""${dependents}"/Brucella_ovis/NC_009505.gbk"
+        gbk_file2=""${dependents}"/Brucella_ovis/NC_009504.gbk"
+        gbk_files=("$gbk_file1" "$gbk_file2")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Brucella_ovis/Ovis_Defining_SNPs.txt"
+
+        FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+        filterdir=""${dependents}"/Brucella_ovis/FilterFiles" #Files containing positions to filter
+
+        QUAL=300 # Minimum quality for calling a SNP
+        highEnd=350 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using B. ovis variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
+        ;;
+
+    bovis)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/Mycobacterium_bovis/NC_002945.fasta"
+
+        gbk_files=(""${dependents}"/Mycobacterium_bovis/NC_002945.gbk")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/Mycobacterium_bovis/DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using M. bovis variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        if [ "$eflag" ]; then
+            echo "Only the "elite" bovis isolates are being ran"
+        else
+            echo "All bovis are being ran"
+        fi
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/Mycobacterium_bovis/Filtered_Regions.xlsx"
+
+        #Usage: perl parseXL.pl <input.xlsx> <output.tsv>
+        #Usage: perl rangeExpander.pl <filterFile.txt> <output_folder>
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb1)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB1/NC_017528.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB1/tb1DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB1/tb1Filtered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb2)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB2/NC_021251.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB2/tb2DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB2/tb2Filtered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb3)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB3/NC_021193.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB3/tb3DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB3/tb3Filtered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb4a)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB4a/NC002755.fasta"
+
+        # gbk_file=""${dependents}"/NC_018143.gbk"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB4a/tb4aDefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB4a/tb4aFiltered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb4b)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB4b/NC018143.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB4b/tb4bDefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB4b/tb4bFiltered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb5)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB5/APKD01000001.fasta"
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB5/tb5DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB5/tb5Filtered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    tb6)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/TB6/NC_015758.fasta"
+
+        gbk_files=(""${dependents}"/TB6/NC_015758.gbk")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/TB6/tb6DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/TB6/tb6Filtered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    para)
+
+        genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
+
+        #reference genome
+        genome=""${dependents}"/paraTB/NC_002944.fasta"
+
+        gbk_files=(""${dependents}"/paraTB/NC_002944.gbk")
+
+        # This file tells the script how to cluster VCFs
+        DefiningSNPs=""${dependents}"/paraTB/DefiningSNPsGroupDesignations.txt"
+        FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
+        FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
+
+        QUAL=150 # Minimum quality for calling a SNP
+        highEnd=200 # QUAL range to change ALT to N
+
+        echo "Script vcftofasta.sh ran using para variables" | tee "${baseDir}"/section5.txt
+        email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
+
+        # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+        # Excel tab label "New groupings"
+        excelinfile=""${dependents}"/paraTB/Filtered_Regions.xlsx"
+        
+        parseXLSX.pl \
+            "$excelinfile" \
+            /dev/stdout \
+            | rangeExpander.pl \
+                /dev/stdin \
+                "$filterdir"
+        ;;
+
+    *)
+
+        displayHelp
+        rm -rf "$baseDir" #remove analysis folder
+        exit 1 #stop script execution
+        ;;
+esac
+
 
 #################
 #               #
-#    Options    #
+#   Functions   #
 #               #
 #################
-
-
-# Set flags
-# flag -c with look for positions to filter.  By default, with no -c, this will not be done.
-# flag -m will email just "M"e
-# flag -e will run the bovis "E"lite representative samples
-# flag -a get "a"ll_vcf alignment table
-
-cflag=
-mflag=
-eflag=
-aflag=
-while getopts 'cmea' OPTION; do
-    case "$OPTION" in
-        c) cflag=1
-        ;;
-        m) mflag=1
-        ;;
-        e) eflag=1
-        ;;
-        a) aflag=1
-        ;;
-        ?) echo "Invalid option: -"$OPTARG"" >&2
-        ;;
-    esac
-done
-shift $(($OPTIND - 1))
-
-
-#if use the "elite" flag not with bovis
-if [ "$eflag" ] && [ "$1" != "bovis" ]; then 
-    echo "The \"-e\" option can only be used with \"bovis\""
-    exit 1
-fi
-
-
-# Environment controls:
-
-if [ "$1" = "ab1" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt" #to change the name of vcf files
-
-    #reference genome
-    genome=""${dependents}"/Brucella_abortus/NC_00693c.fasta"
-
-    # When more than one chromosome
-    # Genbank files must have "NC" file names that match NC numbers in VCF chrom identification in column 1 of vcf
-    # Example: File name: NC_017250.gbk and "gi|384222553|ref|NC_017250.1|" listed in vcf
-    gbk_file1=""${dependents}"/Brucella_abortus/NC_006932.gbk"
-    gbk_file2=""${dependents}"/Brucella_abortus/NC_006933.gbk"
-    gbk_files=("$gbk_file1" "$gbk_file2")
-    # echo "${gbk_files[@]}"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_abortus/Abortus1_Defining_SNPs.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    for i in "${dependents}"/Brucella_abortus/FilterFiles/*; do
-        name=$(basename "$i")
-        ln -s "$i" "${filterdir}"/"${name}"
-    done
-
-    # filterdir=""${dependents}"/Brucella_abortus/FilterFiles" #Files containing positions to filter
-    
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using Brucella abortus bv 1, 2 or 4 variables" | tee "${baseDir}"/section5.txt
-
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "mel" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_melitensis/BmelitensisM5-90.fasta"
-
-    gbk_file1=""${dependents}"/Brucella_melitensis/NC_017246.gbk"
-    gbk_file2=""${dependents}"/Brucella_melitensis/NC_017247.gbk"
-    gbk_files=("$gbk_file1" "$gbk_file2")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_melitensis/Mel_Defining_SNPs.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_melitensis/FilterFiles" #Files containing positions to filter
-    
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B. melitensis variables" | tee "${baseDir}"/section5.txt
-
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "suis1" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_suis_bv1/NC_01725c.fasta"
-
-    gbk_file1=""${dependents}"/Brucella_suis_bv1/NC_017250.gbk"
-    gbk_file2=""${dependents}"/Brucella_suis_bv1/NC_017251.gbk"
-    gbk_files=("$gbk_file1" "$gbk_file2")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_suis_bv1/Suis1_Defining_SNPs.txt"
-
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_suis_bv1/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B. suis bv1 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "suis2" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_suis_bv2/Bsuisbv2-94-11.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_suis_bv2/suis2_Defining_SNPs.txt"
-
-    FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_suis_bv2/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B. suis bv2 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "suis3" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_suis_bv3/B-REF-BS3-686.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_suis_bv3/Suis3_Defining_SNPs.txt"
-
-    FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_suis_bv3/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B. suis bv3 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "suis4" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_suis_bv4/B-REF-BS4-40.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_suis_bv4/Suis4_Defining_SNPs.txt"
-
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_suis_bv/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B. suis bv4 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "canis" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_canis/BcanisATCC23365.fasta"
-
-    gbk_file1=""${dependents}"/Brucella_canis/NC_010103.gbk"
-    gbk_file2=""${dependents}"/Brucella_canis/NC_010104.gbk"
-    gbk_files=("$gbk_file1" "$gbk_file2")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_canis/Canis_Defining_SNPs.txt"
-
-    FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_canis/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "vcftofasta.sh ran as B. canis"
-    echo "Script vcftofasta.sh ran using B. canis variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "ceti1" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_ceti-grp1/Bceti1Cudo.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_ceti-grp1/Ceti1_Defining_SNPs.txt"
-
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_ceti-grp1/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B ceti group 1 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "ceti2" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_ceti-grp2/BBceti2-TE10759.fasta"
-
-    gbk_file1=""${dependents}"/Brucella_abortus/NC_022905.gbk"
-    gbk_file2=""${dependents}"/Brucella_abortus/NC_022906.gbk"
-    gbk_files=("$gbk_file1" "$gbk_file2")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_ceti-grp2/Ceti2_Defining_SNPs.txt"
-
-    FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_ceti-grp2/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B ceti group 2 variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-elif [ "$1" = "ovis" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/bruc_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Brucella_ovis/BovisATCC25840.fasta"
-
-    gbk_file1=""${dependents}"/Brucella_ovis/NC_009505.gbk"
-    gbk_file2=""${dependents}"/Brucella_ovis/NC_009504.gbk"
-    gbk_files=("$gbk_file1" "$gbk_file2")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Brucella_ovis/Ovis_Defining_SNPs.txt"
-
-    FilterAllVCFs="no" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-    filterdir=""${dependents}"/Brucella_ovis/FilterFiles" #Files containing positions to filter
-
-    QUAL=300 # Minimum quality for calling a SNP
-    highEnd=350 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using B. ovis variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
-
-### TB ###
-
-elif [ "$1" = "bovis" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/Mycobacterium_bovis/NC_002945.fasta"
-
-    gbk_files=(""${dependents}"/Mycobacterium_bovis/NC_002945.gbk")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/Mycobacterium_bovis/DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using M. bovis variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    if [ "$eflag" ]; then
-        echo "Only the "elite" bovis isolates are being ran"
-    else
-        echo "All bovis are being ran"
-    fi
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/Mycobacterium_bovis/Filtered_Regions.xlsx"
-
-    #Usage: perl parseXL.pl <input.xlsx> <output.tsv>
-    #Usage: perl rangeExpander.pl <filterFile.txt> <output_folder>
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb1" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB1/NC_017528.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB1/tb1DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB1/tb1Filtered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb2" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB2/NC_021251.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB2/tb2DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB2/tb2Filtered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb3" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB3/NC_021193.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB3/tb3DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="no" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB3/tb3Filtered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb4a" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB4a/NC002755.fasta"
-
-    # gbk_file=""${dependents}"/NC_018143.gbk"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB4a/tb4aDefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB4a/tb4aFiltered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb4b" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB4b/NC018143.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB4b/tb4bDefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB4b/tb4bFiltered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb5" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB5/APKD01000001.fasta"
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB5/tb5DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB5/tb5Filtered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "tb6" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/TB6/NC_015758.fasta"
-
-    gbk_files=(""${dependents}"/TB6/NC_015758.gbk")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/TB6/tb6DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using ${1} variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/TB6/tb6Filtered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-elif [ "$1" = "para" ]; then
-
-    genotypingcodes=""${dependents}"/genotyping_codes/tb_tags.txt"
-
-    #reference genome
-    genome=""${dependents}"/paraTB/NC_002944.fasta"
-
-    gbk_files=(""${dependents}"/paraTB/NC_002944.gbk")
-
-    # This file tells the script how to cluster VCFs
-    DefiningSNPs=""${dependents}"/paraTB/DefiningSNPsGroupDesignations.txt"
-    FilterAllVCFs="yes" #(yes or no), Do you want to filter all VCFs?
-    FilterGroups="yes" #(yes or no), Do you want to filter VCFs withing their groups, subgroups, and clades
-
-    QUAL=150 # Minimum quality for calling a SNP
-    highEnd=200 # QUAL range to change ALT to N
-
-    echo "Script vcftofasta.sh ran using para variables" | tee "${baseDir}"/section5.txt
-    email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaia@inspection.gc.ca"
-
-    # For tb inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    # Excel tab label "New groupings"
-    excelinfile=""${dependents}"/paraTB/Filtered_Regions.xlsx"
-    
-    parseXLSX.pl \
-        "$excelinfile" \
-        /dev/stdout \
-        | rangeExpander.pl \
-            /dev/stdin \
-            "$filterdir"
-
-else
-
-    echo -e "\
-Usage: vcftofasta.sh [flag] <species>
-
-Madatory argument (species; chose only one):
-    ab1    Brucella abortus bv 1
-    mel    Brucella melitensis
-    suis1  Brucella suis bv 1
-    suis2  Brucella suis bv 2
-    suis3  Brucella suis bv 3
-    suis4  Brucella suis bv 4
-    canis  Brucella canis
-    ceti1  Brucella ceti bv 1
-    ceti2  Brucella ceti bv 2
-    ovis   Brucella ovis
-    bovis  Mycobacterium bovis (TBBOV)
-    tb1    Mycobacterium bovis group 1
-    tb2    Mycobacterium bovis group 2
-    tb3    Mycobacterium bovis group 3
-    tb4a   Mycobacterium bovis group 4a
-    tb4b   Mycobacterium bovis group 4b
-    tb5    Mycobacterium bovis group 5
-    tb6    Mycobacterium bovis group 6
-    para   Mycobacterium avium subsp. paratuberculosis
-
-Optional flags:
-
-    -c     look for positions to filter.  By default, with no -c, this will not be done.
-    -m     email just "M"e
-    -e     run the bovis "E"lite representative samples
-    -a     get "a"ll_vcf alignment table
-"
-
-    rm -rf "$baseDir" #remove analysis folder
-    exit 1 #stop script execution
-fi
-
 
 
 function removeIsolates ()
@@ -789,10 +861,6 @@ function removeIsolates ()
 }
 
 
-# If there are 2 vcf files with the same name one of the files might unknowingly
-# get cut out of the analysis and keep the undesired vcf instead.  This will
-# alert if 2 vcf with the same TB number are present.
-# The regular expression used in sed should be changed based on vcf naming convention
 function testDuplicates ()
 {
     echo -e "\nChecking input VCF files..."
@@ -840,38 +908,38 @@ function testDuplicates ()
 # This function prepares the filter files.
 # awk needs to see a number in the file, so if the file is blank 2 matching numbers are added.  2 numbers because duplicates are kept therefore allowing a number to be pasting into awk when comparing files.
 
-function filterFilespreparation ()
-{
-    # For tb, inputXLS.py creates text files with positions to be filetered, and places them in filterdir
-    echo "Waiting for filter file creation to complete"
+# function filterFilespreparation ()
+# {
+#     # For tb, inputXLS.py creates text files with positions to be filetered, and places them in filterdir
+#     echo "Waiting for filter file creation to complete"
 
-    echo "Preparing Filter Files"
-    for i in $(find -L "$filterdir" -type f | grep -F ".txt"); do
-        getbase=$(basename "$i")
-        number=$(echo "$getbase" | sed 's/\(.*\)\..*/\1/')
+#     echo "Preparing Filter Files"
+#     for i in $(find -L "$filterdir" -type f | grep -F ".txt"); do
+#         getbase=$(basename "$i")
+#         number=$(echo "$getbase" | sed 's/\(.*\)\..*/\1/')
 
-        cat "$i" \
-            | sort | uniq \
-            > "${baseDir}"/"${number}".num
+#         cat "$i" \
+#             | sort | uniq \
+#             > "${baseDir}"/"${number}".num
 
-        if [ "$chromCount" -eq 1 ]; then
-            echo "100000000" >> "${baseDir}"/"${number}".num
-            echo "100000000" >> "${baseDir}"/"${number}".num
-        elif [ "$chromCount" -eq 2 ]; then
-            echo "chrom1    100000000" >> "${baseDir}"/"${number}".num
-            echo "chrom1    100000000" >> "${baseDir}"/"${number}".num
-            echo "chrom2    100000000" >> "${baseDir}"/"${number}".num
-            echo "chrom2    100000000" >> "${baseDir}"/"${number}".num
-        else
-            echo "Greater than 2 chromosomes present."
-        fi
+#         if [ "$chromCount" -eq 1 ]; then
+#             echo "100000000" >> "${baseDir}"/"${number}".num
+#             echo "100000000" >> "${baseDir}"/"${number}".num
+#         elif [ "$chromCount" -eq 2 ]; then
+#             echo "chrom1    100000000" >> "${baseDir}"/"${number}".num
+#             echo "chrom1    100000000" >> "${baseDir}"/"${number}".num
+#             echo "chrom2    100000000" >> "${baseDir}"/"${number}".num
+#             echo "chrom2    100000000" >> "${baseDir}"/"${number}".num
+#         else
+#             echo "Greater than 2 chromosomes present."
+#         fi
 
-        rm "$i"
-        mv "${baseDir}"/"${number}".num "${baseDir}"/"${number}".txt
-    done
+#         rm "$i"
+#         mv "${baseDir}"/"${number}".num "${baseDir}"/"${number}".txt
+#     done
 
-    echo "Finished preparing filter files"
-}
+#     echo "Finished preparing filter files"
+# }
 
 
 #################################################################################
@@ -931,92 +999,6 @@ else
 }
 
 
-#################################################################################
-
-function findpositionstofilter ()
-{
-    echo "Finding positions to filter --> "$(date "+%F %A %H:%M:%S")""
-
-    d="$1"
-
-    # positions have already been filtered via cutting specific positions.
-    cp "${d}"/filtered_total_ref_pos.txt "${d}"/total_pos.txt
-    cat "${d}"/total_pos.txt | awk '{print $1}' > "${d}"/prepositionlist.txt
-
-    for n in $(cat "${d}"/prepositionlist.txt); do
-        front=$(echo "$n" | sed 's/\(.*\)-\([0-9]*\)/\1/')
-        back=$(echo "$n" | sed 's/\(.*\)-\([0-9]*\)/\2/')
-        # echo "front: $front"
-        # echo "back: $back"
-
-        positioncount=$(cat $(find "${d}" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" ' $1 = f && $2 = b {count++} END {print count}')
-
-        #echo "position count: $positioncount"
-        if [ "$positioncount" -gt 2 ]; then
-            #printf "%s\t%s\n" "$front" "$back"
-            echo "$n" >> "${d}"/positionlist.txt
-        else
-            echo "$n" >> "${d}"-DONOT_filtertheseposition.txt # "$d" from fasta_table ()
-        fi
-    done
-
-    echo "Filtering --> "$(date "+%F %A %H:%M:%S")""
-
-    for p in $(cat "${d}"/positionlist.txt); do
-        front=$(echo "$p" | sed 's/\(.*\)-\([0-9]*\)/\1/')
-        back=$(echo "$p" | sed 's/\(.*\)-\([0-9]*\)/\2/')
-        #echo "front: $front"
-        #echo "back: $back"
-
-        maxqual=$(cat $(find "$d" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" 'BEGIN{max=0} $1 = f && $2 = b {if ($6>max) max=$6} END {print max}' \
-            | sed 's/\..*//')
-
-        avequal=$(cat $(find "${d}" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" '$6 != "." && $1 = f && $2 = b {print $6}' \
-            | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' \
-            | sed 's/\..*//')
-
-        maxmap=$(cat $(find "$d" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" ' $1 = f && $2 = b {print $8}' \
-            | sed 's/.*MQ=\(.....\).*/\1/' | awk 'BEGIN{max=0}{if ($1>max) max=$1} END {print max}' \
-            | sed 's/\..*//')
-
-        avemap=$(cat $(find "$d" -maxdepth 1 -type f | grep -F ".vcf") \
-            | awk -v f="$front" -v b="$back" '$6 != "." && $1 = f && $2 = b {print $8}' \
-            | sed 's/.*MQ=\(.....\).*/\1/' \
-            | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }' \
-            | sed 's/\..*//')
-
-        #change maxmap from 52 to 56 2015-09-18
-        if [ "$maxqual" -lt 1300  ] || [ "$avequal" -lt 800 ] || [ "$maxmap" -lt 58  ] || [ "$avemap" -lt 57 ]; then
-            echo "maxqual "$maxqual"" >> "${d}"/filterpositiondetail.txt
-            echo "avequal "$avequal"" >> "${d}"/filterpositiondetail.txt
-            echo "maxmap "$maxmap"" >> "${d}"/filterpositiondetail.txt
-            echo "avemap "$avemap"" >> "${d}"/filterpositiondetail.txt
-            echo "position "$p"" >> "${d}"/filterpositiondetail.txt
-            echo ""  >> "${d}"/filterpositiondetail.txt
-            echo "$p" >> "${d}"-filtertheseposition.txt
-        else
-            echo "$p" >> "${d}"-DONOT_filtertheseposition.txt
-            #echo "maxqual $maxqual"
-            #echo "maxmap $maxmap"
-            #echo "avemap $avemap"
-            #echo "position $p"
-            #echo ""
-        fi
-    done
-
-    #cleanup
-    rm "${d}"/positionlist.txt
-    rm "${d}"/prepositionlist.txt
-    rm "${d}"/total_pos.txt
-}
-
-#################################################################################
-
-#   Function: fasta and table creation
 function fasta_table ()
 {
     unset directories
@@ -1206,12 +1188,6 @@ function alignTable ()
         "${parent}"/"${dName}".table.txt \
         "${d}"/cleanedAlignment.txt \
         "${d}"/"${dName}".organized_table.txt
-
-    # sortOrganizeTable.py \
-    #     "${parent}"/"${dName}".table.txt \
-    #     "${d}"/cleanedAlignment.txt \
-    #     "${d}"/"${dName}".sorted_table.txt \
-    #     "${d}"/"${dName}".organized_table.txt
     wait
 
     #replace sorted table
@@ -1274,32 +1250,13 @@ function alignTable ()
 #################################################################################
 
 
-# Clean the tag file that has been exported to Desktop
-#chmod 777 ${genotypingcodes}  
-#cat ${genotypingcodes} | tr '\r' '\n' | awk -F '\t' 'BEGIN{OFS="\t";} {gsub("\"","",$5);print;}' | sed 's/\"##/##/' | sed 's/MN_Wildlife_Deer_//' > preparedTags.txt
 
-#clean_tag.sh $genotypingcodes
-####################
-# Clean the genotyping codes used for naming output
-#sed 's/\*//g' < preparedTags.txt -e 's/(/_/g' -e 's/)/_/g' -e 's/ /_/g' -e 's/-_/_/g' -e 's/\?//g' -e 's/_-/_/g' -e 's/,/_/g' -e 's#/#_#g' \
-#| sed 's#\\#_#g' | sed 's/__/_/g' | sed 's/__/_/g' | sed 's/__/_/g' | sed 's/-$//g' | sed 's/_$//g' |awk 'BEGIN {OFS="\t"}{gsub("_$","",$1)}1' > "${baseDir}"/outfile.txt
-#rm preparedTags.txt
 
-#cat ${genotypingcodes} | tr '\r' '\n' | grep "Yes" | sed 's/_.*//' >> elite
-#echo "Only samples in this file will be ran when elite is used as the secound argument" >> elite
-
-####################
 
 # Test for duplicate VCFs
 testDuplicates
 wait
 
-#Prepare Filter files.
-# filterFilespreparation
-# wait
-
-#Test for match coverage file
-# checkMatchingCoverageFile
 
 # if [ "$eflag" ]; then
 #     echo "Only analyzing elite files"
@@ -1321,7 +1278,11 @@ wait
 # rm elite
 
 
-#################################################################################
+##########################
+#                        #
+#    Chromosome count    #
+#                        #
+##########################
 
 
 # Count the number of chromosomes used in the reference when VCFs were made.
@@ -1337,13 +1298,15 @@ chromCount=$(cat "${baseDir}"/chroms.txt | wc -l)
 echo -e "Found "$chromCount" chromosome(s):\n$(cat "${baseDir}"/chroms.txt)"
 
 
-#################################################################################
+######################
+#                    #
+#  Remove isolates   #
+#                    #
+######################
 
-# Remove selected isolates from comparison
+
 # This is optional, and should be turned on or off based on laboratories preference
 # removeIsolates
-
-#################################################################################
 
 
 #######################
@@ -1353,63 +1316,57 @@ echo -e "Found "$chromCount" chromosome(s):\n$(cat "${baseDir}"/chroms.txt)"
 #######################
 
 
-#This is optional
-if [ -f "${baseDir}"/outfile.txt ]; then
+# #This is optional
+# if [ -f "${baseDir}"/outfile.txt ]; then
 
-    echo -e "\nRenaming files..."
+#     echo -e "\nRenaming files..."
 
-    for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-        base=$(basename "$i")
-        searchName=$(cut -d "." -f 1 <<< "$base")
-        # echo "Original File: "$base""
-        # echo "searchName: "$searchName""
+#     for i in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+#         base=$(basename "$i")
+#         searchName=$(cut -d "." -f 1 <<< "$base")
+#         # echo "Original File: "$base""
+#         # echo "searchName: "$searchName""
 
-        # Direct script to text file containing a "${baseDir}"/list.txt of the correct labels to use.
-        # The file must be a txt file.
+#         # Direct script to text file containing a "${baseDir}"/list.txt of the correct labels to use.
+#         # The file must be a txt file.
         
-            p=$(cat "${baseDir}"/outfile.txt | grep "$searchName")
-            echo "This is what was found in tag file: "$p""
-            newName=$(echo "$p" | awk '{print $1}' | tr -d "[:space:]") # Captured the new name
-            n=$(echo "$base" | sed "$tbNumberV" | sed "$tbNumberW")
-            noExtention=$(echo "$base" | sed "$dropEXT")
-            VALtest=$(echo "$i" | grep "VAL")
-            # echo "VALtest: $VALtest"
-            # h=`echo ${i%-AZ}`; g=`echo ${h%-Broad}`; echo $g
+#             p=$(cat "${baseDir}"/outfile.txt | grep "$searchName")
+#             echo "This is what was found in tag file: "$p""
+#             newName=$(echo "$p" | awk '{print $1}' | tr -d "[:space:]") # Captured the new name
+#             n=$(echo "$base" | sed "$tbNumberV" | sed "$tbNumberW")
+#             noExtention=$(echo "$base" | sed "$dropEXT")
+#             VALtest=$(echo "$i" | grep "VAL")
+#             # echo "VALtest: $VALtest"
+#             # h=`echo ${i%-AZ}`; g=`echo ${h%-Broad}`; echo $g
 
-            #Check if a name was found in the tag file.  If no name was found, keep original name, make note in log and cp file to unnamed folder.
-            if [ -z "$p" ]; then # new name was NOT found
-                if [ -z "$VALtest" ]; then
-                    name="$searchName"
-                    echo "n is "$n""
-                    echo "$name" >> "${baseDir}"/section1.txt
+#             #Check if a name was found in the tag file.  If no name was found, keep original name, make note in log and cp file to unnamed folder.
+#             if [ -z "$p" ]; then # new name was NOT found
+#                 if [ -z "$VALtest" ]; then
+#                     name="$searchName"
+#                     echo "n is "$n""
+#                     echo "$name" >> "${baseDir}"/section1.txt
                     
-                    mkdir -p "${baseDir}"/FilesNotRenamed
-                    cp "$i" "${baseDir}"/FilesNotRenamed
-                    mv "$i" "${baseDir}"/"${name}".vcf
-                else
-                    name="${searchName}"-Val
-                    mv "$i" "${baseDir}"/"${name}".vcf
-                fi
-            else # New name WAS found
-                if [ -z "$VALtest" ]; then
-                    name="$newName"
-                    mv "$i" "${baseDir}"/"${name}".vcf
-                else
-                    name="${newName}"-Val
-                    echo "newName is $name"
-                    mv "$i" "${baseDir}"/"${name}".vcf
-                fi
-            fi
-    done
-fi
+#                     mkdir -p "${baseDir}"/FilesNotRenamed
+#                     cp "$i" "${baseDir}"/FilesNotRenamed
+#                     mv "$i" "${baseDir}"/"${name}".vcf
+#                 else
+#                     name="${searchName}"-Val
+#                     mv "$i" "${baseDir}"/"${name}".vcf
+#                 fi
+#             else # New name WAS found
+#                 if [ -z "$VALtest" ]; then
+#                     name="$newName"
+#                     mv "$i" "${baseDir}"/"${name}".vcf
+#                 else
+#                     name="${newName}"-Val
+#                     echo "newName is $name"
+#                     mv "$i" "${baseDir}"/"${name}".vcf
+#                 fi
+#             fi
+#     done
+# fi
 
-[ -e "${baseDir}"/outfile.txt ] && rm "${baseDir}"/outfile.txt
-
-##################### Start: Make Files Unix Compatiable #####################
-
-#Fix validated (VAL) vcf files.  This is used in vcftofasta scripts to prepare validated vcf files opened and saved in Excel.
-#Create "${baseDir}"/list.txt of isolates containing "VAL"
-#Do NOT make this a child process.  It messes changing column 1 to chrom
+# [ -e "${baseDir}"/outfile.txt ] && rm "${baseDir}"/outfile.snpTableToXlsx
 
 
 #####################
@@ -1419,37 +1376,36 @@ fi
 #####################
 
 
-#check if file is in dos format
+# echo -e "\nChecking for dos characters in VCF files..."
 
-echo -e "\nChecking for dos characters in VCF files..."
+# #check if file is in dos format
+# isDos=()
+# for j in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
+#     dosLine=$(cat "$j" | grep -IU --color "^M") #count caracters only founf in Windows files
+#     [ -n "$dosLine" ] && isDos+=("$j") #if found put in array
+# done
 
-isDos=()
-for j in $(find -L "$baseDir" -type f | grep -F ".vcf"); do
-    dosLine=$(cat "$j" | grep -IU --color "^M") #count caracters only founf in Windows files
-    [ -n "$dosLine" ] && isDos+=("$j") #if found put in array
-done
+# # echo "${#isDos[@]}"  # Debug
 
-# echo "${#isDos[@]}"
+# wait
 
-wait
+# #if some files have windows-type carriage returns
+# if [ "${#isDos[@]}" -gt 0 ]; then
 
-#if some files have windows-type carriage returns
-if [ "${#isDos[@]}" -gt 0 ]; then
+#     echo -e "\nMaking files Unix compatiable..."
 
-    echo -e "\nMaking files Unix compatiable..."
+#     #Only change those files
+#     for v in "${isDos[@]}"; do
+#         dos2unix "$v" > /dev/null 2>&1 #Fixes files opened and saved in Excel
+#         cat "$v" | tr '\r' '\n' \
+#             | awk -F '\t' 'BEGIN{OFS="\t";} {gsub("\"","",$5);print;}' \
+#             | sed -e 's/\"##/##/' -e 's/\"AC=/AC=/' \
+#             > "${baseDir}"/"${v}".temp
+#         mv "${baseDir}"/"${v}".temp "${baseDir}"/"$v"
+#     done
+# fi
 
-    #Only change those files
-    for v in "${isDos[@]}"; do
-        dos2unix "$v" > /dev/null 2>&1 #Fixes files opened and saved in Excel
-        cat "$v" | tr '\r' '\n' \
-            | awk -F '\t' 'BEGIN{OFS="\t";} {gsub("\"","",$5);print;}' \
-            | sed -e 's/\"##/##/' -e 's/\"AC=/AC=/' \
-            > "${baseDir}"/"${v}".temp
-        mv "${baseDir}"/"${v}".temp "${baseDir}"/"$v"
-    done
-fi
-
-wait
+# wait
 
 
 ###############################
@@ -1631,7 +1587,6 @@ fi
 
 #For QA, keep a copy of these files to reproduce analysis
 # cp "$DefiningSNPs" "$baseDir"
-# cp "${dependents}"/Table_Template.xlsx "$baseDir"
 # cp "$0" "$baseDir" #$0 is the name of the script itself
 
 
@@ -1657,7 +1612,7 @@ fi
 
 wait
 
-# echo "${directories[@]}" | tr " " "\n"
+# echo "${directories[@]}" | tr " " "\n"  # Debug
 
 #all_groups/all_subgroups/all_clades
 for d in "${directories[@]}"; do
@@ -1694,15 +1649,14 @@ wait
 
 
 # echo -e "\nPreparing final report --> "$(date "+%F %A %H:%M:%S")""
-
 [ -f "${baseDir}"/section1.txt ] && cat "${baseDir}"/section1.txt | column > "${baseDir}"/csection1.txt
-
 
 #Script execution time
 echo -e "\nEnd Time: "$(date "+%F %A %H:%M:%S")"\n" | tee -a "${baseDir}"/sectiontime.txt
 endtime=$(date +%s)
 runtime=$((endtime-starttime))
-printf 'Runtime: %dh:%dm:%ds\n' $(($runtime/3600)) $(($runtime%3600/60)) $(($runtime%60)) | tee -a "${baseDir}"/sectiontime.txt
+printf 'Runtime: %dh:%dm:%ds\n' $(($runtime/3600)) $(($runtime%3600/60)) $(($runtime%60)) \
+    | tee -a "${baseDir}"/sectiontime.txt
 
 
 #####################
@@ -1747,38 +1701,40 @@ echo -e "\n****************************************************" >> "${baseDir}"
 echo "<html>" > "${baseDir}"/email_log.html
 echo "<Body>" >> "${baseDir}"/email_log.html
 
+separator="\n****************************************************\n"
+
 cat "${baseDir}"/sectiontime.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >  "${baseDir}"/email_log.html
-echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+echo -e "$separator" >> "${baseDir}"/email_log.html
 
 cat "${baseDir}"/section5.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >> "${baseDir}"/email_log.html
-echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+echo -e "$separator" >> "${baseDir}"/email_log.html
 
 echo "<p> These files did not get renamed: </p>" >> "${baseDir}"/email_log.html
 [ -f "${baseDir}"/csection1.txt ] && cat "${baseDir}"/csection1.txt \
     | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>"$i"</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
-echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+echo -e "$separator" >> "${baseDir}"/email_log.html
 
 echo "<p> Possible Mixed Isolates, Defining SNPs called AC=1 </p>" >> "${baseDir}"/email_log.html
 cat "${baseDir}"/section2.txt \
     | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>"$i"</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
-echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+echo -e "$separator" >> "${baseDir}"/email_log.html
 
 cat "${baseDir}"/section3.txt \
     | awk 'BEGIN{print "<table>"} {print "<tr>";for(i=1;i<=NF;i++)print "<td>"$i"</td>";print "</tr>"} END{print "</table>"}' \
     >> "${baseDir}"/email_log.html
-echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+echo -e "$separator" >> "${baseDir}"/email_log.html
 
 echo "<p> SNP counts: </p>" >> "${baseDir}"/email_log.html
 cat "${baseDir}"/section4.txt \
     | awk 'BEGIN{print "<Body>"} {print "<p style=\"line-height: 40%;\">" $0 "</p>"} END{print "</Body>"}' \
     >> "${baseDir}"/email_log.html
-echo -e "\n****************************************************\n" >> "${baseDir}"/email_log.html
+echo -e "$separator" >> "${baseDir}"/email_log.html
 
 echo "<p> AC1 called SNPs: </p>" >> "${baseDir}"/email_log.html
 cat "${baseDir}"/all_vcfs/all_vcfs_AC1Report.txt \
