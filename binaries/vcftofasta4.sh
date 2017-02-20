@@ -160,6 +160,7 @@ aflag=""  # get "a"ll_vcf alignment table
 baseDir=""  # Where analysis will take place
 vcfPath=""  # Where the VCF files are
 
+# Hardcoded paths for debug
 baseDir="/home/bioinfo/analyses/mbovis_script2_All2017"
 vcfPath="/media/3tb_hdd/db/Mycobacterium_VCFs"
 

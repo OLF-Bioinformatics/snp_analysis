@@ -8,14 +8,85 @@
 ######################
 
 
-#where fastq reads are
-export fastqPath="/media/3tb_hdd/data/Mycobaterium_bovis/outbreak2016"
-
-#Analysis root directory
-export baseDir=""${HOME}"/analyses/mbovis_script1_2017" #make variable global (for called scripts)
-
 #script dependenties
 export dependents=""${HOME}"/prog/snp_analysis/script_dependents"
+
+
+#################
+#               #
+#    Options    #
+#               #
+#################
+
+
+function displayHelp()
+{
+echo -e "\
+Usage: email_loopFiles2.sh [flag] -b analysisFolder -v vcfSourceFolder
+
+Mandatory flags:
+
+    -b         base directory. Folder in which the analysis will take place
+    -f         VCF file root folder. Will look recursively for \"SNPsZeroCoverage.vcf\" files
+
+Optional flags:
+
+    -m         mail just \"M\"e
+"
+}
+
+#Colored error message
+BLUE='\033[1;34m'
+NC='\033[0m' # No Color
+
+baseDir=""
+fastqPath=""
+mflag=0
+
+#Hardcoded paths for debug
+# export fastqPath="/media/3tb_hdd/data/Mycobaterium_bovis/outbreak2016"
+# export baseDir=""${HOME}"/analyses/mbovis_script1_2017" #make variable global (for called scripts)
+
+options=':mb:f:h'
+
+while getopts "$options" opt; do
+    case "$opt" in
+        m)
+            mflag=1
+            ;;
+        b)
+            export baseDir="$OPTARG"  # make variable global (for called scripts)
+            ;;
+        f)
+            export fastqPath="$OPTARG"  # make variable global (for called scripts)
+            ;;
+        h)
+            displayHelp
+            exit 1
+            ;;
+        \?)
+            printf ""${BLUE}"Invalid option: -"$OPTARG"\n\n"${NC}"" >&2
+            # echo "Invalid option: -"$OPTARG"" >&2
+            displayHelp
+            exit 1
+            ;;
+        :)
+            printf ""${BLUE}"Option -"$OPTARG" requires an argument.\n\n"${NC}"" >&2
+            # echo "Option -"$OPTARG" requires an argument." >&2
+            displayHelp
+            exit 1
+            ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+# Exit if option flags b or v are missing
+if [[ -z "$baseDir" ]] || [[ -z "$fastqPath" ]]; then
+    echo "Both \"-b\" and \"-f\" options are mandatory"
+    displayHelp
+    exit 1
+fi
 
 
 #####################
@@ -77,7 +148,7 @@ cat "${reports}"/email_processZips.txt \
 
 # rm "${reports}"/email_processZips.txt
 
-if [ $1  ] && [ "$1" = "me" ]; then
+if [ "$mflag" -eq 1 ]; then
     email_list="marc-olivier.duceppe@inspection.gc.ca"
 else
     email_list="marc-olivier.duceppe@inspection.gc.ca,olga.andrievskaea@inspection.gc.ca,susan.nadin-davis@inspection.gc.ca"
