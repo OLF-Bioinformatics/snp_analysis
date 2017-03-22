@@ -27,7 +27,7 @@ Usage: email_loopFiles2.sh [flag] -b analysisFolder -v vcfSourceFolder
 Mandatory flags:
 
     -b         base directory. Folder in which the analysis will take place
-    -f         VCF file root folder. Will look recursively for \"SNPsZeroCoverage.vcf\" files
+    -f         Fastq files root folder. Will look recursively for \".fastq.gz\" files
 
 Optional flags:
 

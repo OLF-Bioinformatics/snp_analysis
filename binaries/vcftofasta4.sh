@@ -161,8 +161,8 @@ baseDir=""  # Where analysis will take place
 vcfPath=""  # Where the VCF files are
 
 # Hardcoded paths for debug
-baseDir="/home/bioinfo/analyses/mbovis_script2_All2017"
-vcfPath="/media/3tb_hdd/db/Mycobacterium_VCFs"
+# baseDir="/home/bioinfo/analyses/mbovis_script2_All2017"
+# vcfPath="/media/3tb_hdd/db/Mycobacterium_VCFs"
 
 # When you want getopts to expect an argument for an option, just place a : (colon) after the proper option flag
 # If the very first character of the option-string is a : (colon) it allows you to handle errors yourself without being disturbed by annoying messages
