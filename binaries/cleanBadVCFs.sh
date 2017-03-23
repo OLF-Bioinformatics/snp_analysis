@@ -1,5 +1,21 @@
 #!/bin/bash
 
+#check if more than 2 dot in file name
+bad=0
+for i in *.vcf; do
+    mid=$(basename "$i" | cut -d "." -f 2)
+    if [ "$mid" != "SNPsZeroCoverage" ]; then 
+        let bad+=1
+        echo $(basename "$i")
+    fi
+done
+
+if [ "$bad" -gt 0 ]; then
+    echo 'Please rename the previous files so dots (".") are only used for the ".SNPsZeroCoverage.vcf" extension'
+    exit 1
+fi
+
+
 #convert to Unix
 #remove trailing tabs (whitespaces)
 # cat "$i" | sed -e 's/[[:space:]]*$//'
@@ -8,10 +24,8 @@
 #remove heading and trailing "
 # cat "$i" | grep -E "^\"" | sed 's/^\"//g'
 # cat "$i" | grep -F '>"' | sed 's/>"/>/g'
-
 total=$(ls *.vcf | wc -l)
 counter=0
-
 for i in *.vcf; do
     let counter+=1
     echo -e "Working on "$(basename "$i" | cut -d "." -f 1)"... ("${counter}"/"${total}")"
@@ -32,7 +46,7 @@ for i in *.vcf; do
     mv "${i}".tmp "$i"
 done
 
-#rename vcf files so the name of the file matches the name of the sample inside
+#Change sample name inside vcf file to match the file name (before the first dot ".")
 for i in ./*.vcf; do
     vcfName=$(cat "$i" | grep -E "^#CHROM" | cut -f 10)
     fileName=$(basename "$i" | cut -d "." -f 1)
