@@ -228,6 +228,12 @@ if [ "$eflag" ] && [ "$1" != "bovis" ]; then
     exit 1
 fi
 
+#if use the "elite" flag
+if [ "$eflag" ]; then 
+    echo "Sorry, the \"-e\" option has not been implemented yet"
+    exit 1
+fi
+
 
 #####################
 #                   #
@@ -1234,10 +1240,16 @@ function alignTable ()
     #Overwrite the old table
     mv "${d}"/"${dName}".finished_table.txt "${d}"/"${dName}".organized_table.txt
 
+    # TODO
+    # Change sample names inside tree files and SNP table according to translation table first, then convert to Excel
+    # Change file names too?
+
     #Convert the SNP table in excel format (xlsx) with color
-    snpTableToXlsx.py \
-        "${d}"/"${dName}".organized_table.txt \
-        "$dName"
+    # echo "  Converting SNP table to Excel format"
+
+    # snpTableToXlsx.py \
+    #     "${d}"/"${dName}".organized_table.txt \
+    #     "$dName"
 
     #Cleanup
     rm "${d}"/quality.txt
